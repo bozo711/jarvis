@@ -883,6 +883,32 @@ strong{color:#e8d4b0}
 .doom-src{margin-top:16px;font-size:12px;color:#c89400;letter-spacing:.3px;max-width:560px}
 .doom-video{width:100%;max-width:600px;aspect-ratio:16/9;border:0;border-radius:12px}
 .doom-vtitle{font-size:15px;color:var(--text);margin-top:13px;max-width:560px;line-height:1.4}
+/* ── ACADEMY / TEACHER MODE ── */
+#academy{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column}
+#academy.open{display:flex}
+.ac-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--red-b);background:rgba(0,0,0,.45)}
+.ac-top h2{font-size:16px;color:#fff;margin:0;flex:1;letter-spacing:1px;font-weight:bold}
+.ac-back,.ac-x{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.ac-body{flex:1;overflow-y:auto;padding:16px;scrollbar-width:none}
+.ac-body::-webkit-scrollbar{display:none}
+.ac-course{display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:12px;border:1px solid var(--red-b);border-radius:14px;background:var(--red-d);cursor:pointer}
+.ac-course .ic{font-size:28px}
+.ac-course .t{flex:1}
+.ac-course .t b{color:#fff;font-size:16px;display:block;margin-bottom:3px}
+.ac-course .t span{color:var(--text-d);font-size:12px}
+.ac-lesson{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--red-b);border-radius:12px;background:var(--panel);cursor:pointer}
+.ac-lesson .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-b);color:#c89400;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.ac-lesson.done .n{background:#c89400;color:#000;border-color:#c89400}
+.ac-lesson .lt{flex:1;color:var(--text);font-size:14px}
+.ac-lesson-content{color:var(--text);font-size:16px;line-height:1.7;max-width:680px;margin:0 auto}
+.ac-lesson-content h3{color:#fff;font-size:19px;margin:20px 0 8px}
+.ac-lesson-content b{color:#fff}
+.ac-take{display:block;width:100%;max-width:680px;margin:22px auto;padding:14px;border:1px solid var(--gold-b);border-radius:10px;background:var(--gold-d);color:#d8a800;font-family:inherit;font-size:15px;letter-spacing:1px;cursor:pointer}
+.ac-q{max-width:680px;margin:0 auto 16px;border:1px solid var(--red-b);border-radius:12px;padding:14px}
+.ac-q .qt{color:#fff;font-size:15px;margin-bottom:10px;line-height:1.4}
+.ac-opt{display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:7px;border:1px solid var(--red-b);border-radius:8px;background:var(--red-d);color:var(--text);font-family:inherit;font-size:14px;cursor:pointer}
+.ac-opt.right{background:rgba(10,125,44,.32);border-color:#0a7d2c;color:#fff}
+.ac-opt.wrong{background:rgba(150,20,40,.3);border-color:#a02030}
 </style>
 </head>
 <body>
@@ -1006,6 +1032,16 @@ strong{color:#e8d4b0}
   </div>
 </div>
 
+<!-- ACADEMY — teacher mode: structured courses + lessons + quizzes -->
+<div id="academy">
+  <div class="ac-top">
+    <button class="ac-back" id="ac-back" onclick="acBack()" style="display:none">‹</button>
+    <h2 id="ac-title">🎓 Academy</h2>
+    <button class="ac-x" onclick="closeAcademy()">✕</button>
+  </div>
+  <div class="ac-body" id="ac-body"></div>
+</div>
+
 <!-- App -->
 <div id="app">
 
@@ -1035,6 +1071,7 @@ strong{color:#e8d4b0}
       </div>
       <button class="icon-btn" onclick="toggleVoiceOut()" id="voice-out-btn" title="Toggle voice output">🔊</button>
       <button class="icon-btn" onclick="toggleHandsFree()" id="hands-free-btn" title="Hands-free conversation" style="opacity:0.4">🗣</button>
+      <button class="icon-btn" onclick="openAcademy()" title="Teacher mode — structured lessons">🎓</button>
       <button class="icon-btn" onclick="openDoom()" title="Doomscroll — insights, games & more">🌀</button>
       <button class="icon-btn" onclick="openCfg()">⚙</button>
     </div>
@@ -1489,6 +1526,104 @@ function openDoom(){
   }
 }
 function closeDoom(){ document.getElementById('doom').classList.remove('open'); }
+
+// ════════════════════════════════════════════════
+// ACADEMY — Teacher Mode: structured courses, lessons taught step-by-step, quizzes
+// ════════════════════════════════════════════════
+const ACADEMY = [
+  {key:'subconscious', icon:'🧠', title:'The Subconscious Mind', lessons:['How the subconscious actually works','Why repetition reprograms you','Beliefs and the placebo effect','Visualization and mental rehearsal','A daily practice to rewire your mind']},
+  {key:'quantum', icon:'⚛️', title:'Quantum Reality', lessons:['What quantum physics really is','The double-slit experiment','The observer effect and its myths','Superposition and entanglement','What it does and does not mean for you']},
+  {key:'assumption', icon:'✨', title:'The Law of Assumption', lessons:['Neville Goddard: the core idea','Living in the wish fulfilled','Feeling is the secret','Revision: editing the past','Persistence and faith']},
+  {key:'laws', icon:'🌀', title:'The 7 Universal Laws', lessons:['The Law of Mentalism','Correspondence: as above so below','The Law of Vibration','Polarity and Rhythm','Cause and Effect, and Gender']},
+  {key:'ancient', icon:'📜', title:'Ancient Wisdom', lessons:['Hermes Trismegistus and the Emerald Tablets','As above, so below','Alchemy as inner transformation','Roots of the Kybalion','Applying hermetic principles']},
+  {key:'stoic', icon:'🏛️', title:'Stoic Philosophy', lessons:['What Stoicism really teaches','The dichotomy of control','Negative visualization','Amor fati: love your fate','A daily Stoic practice']},
+  {key:'money', icon:'💰', title:'Money and Wealth', lessons:['How money actually works','Assets vs liabilities','Pay yourself first','Building income streams','Think and Grow Rich principles']},
+  {key:'finance', icon:'🧾', title:'Personal Finance and Taxes', lessons:['Budgeting that sticks','Emergency fund and killing debt','Self-employment tax basics','Deductions for creators','Investing fundamentals']},
+];
+let acCourse = null, acView = 'grid';
+
+function acProgress(){ try{ return JSON.parse(localStorage.getItem('jv-academy')||'{}'); }catch(e){ return {}; } }
+function acSaveDone(key, idx){ const p=acProgress(); p[key]=p[key]||[]; if(!p[key].includes(idx)) p[key].push(idx); try{ localStorage.setItem('jv-academy', JSON.stringify(p)); }catch(e){} }
+function acMd(s){ return doomEsc(s).replace(/^#{2,3}\s*(.*)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'); }
+
+function openAcademy(){ document.getElementById('academy').classList.add('open'); acRenderGrid(); }
+function closeAcademy(){ document.getElementById('academy').classList.remove('open'); }
+function acBack(){ if(acView==='lesson'){ acRenderCourse(acCourse); } else { acRenderGrid(); } }
+
+function acRenderGrid(){
+  acView='grid'; acCourse=null;
+  document.getElementById('ac-back').style.display='none';
+  document.getElementById('ac-title').textContent='🎓 Academy';
+  const p=acProgress(), body=document.getElementById('ac-body'); body.innerHTML=''; body.scrollTop=0;
+  ACADEMY.forEach(c=>{
+    const done=(p[c.key]||[]).length, total=c.lessons.length;
+    const el=document.createElement('div'); el.className='ac-course';
+    el.innerHTML='<div class="ic">'+c.icon+'</div><div class="t"><b>'+doomEsc(c.title)+'</b><span>'+done+' / '+total+' lessons'+(done>=total&&total?' · complete ✓':'')+'</span></div><div style="color:var(--text-d);font-size:20px">›</div>';
+    el.onclick=()=>acRenderCourse(c.key); body.appendChild(el);
+  });
+}
+
+function acRenderCourse(key){
+  acView='course'; acCourse=key;
+  document.getElementById('ac-back').style.display='';
+  const c=ACADEMY.find(x=>x.key===key);
+  document.getElementById('ac-title').textContent=c.icon+'  '+c.title;
+  const done=acProgress()[key]||[], body=document.getElementById('ac-body'); body.innerHTML=''; body.scrollTop=0;
+  c.lessons.forEach((lt,i)=>{
+    const el=document.createElement('div'); el.className='ac-lesson'+(done.includes(i)?' done':'');
+    el.innerHTML='<div class="n">'+(done.includes(i)?'✓':(i+1))+'</div><div class="lt">'+doomEsc(lt)+'</div>';
+    el.onclick=()=>acOpenLesson(key,i); body.appendChild(el);
+  });
+}
+
+async function acOpenLesson(key, idx){
+  acView='lesson';
+  document.getElementById('ac-back').style.display='';
+  const c=ACADEMY.find(x=>x.key===key), lt=c.lessons[idx];
+  document.getElementById('ac-title').textContent='Lesson '+(idx+1)+' / '+c.lessons.length;
+  const body=document.getElementById('ac-body'); body.scrollTop=0;
+  if(!cfg.apikey){ body.innerHTML='<div class="ac-lesson-content">Add your API key in ⚙ Settings to start lessons.</div>'; return; }
+  body.innerHTML='<div class="ac-lesson-content">📖 Preparing your lesson on “'+doomEsc(lt)+'”…</div>';
+  const sys='You are a clear, engaging teacher. Teach ONE lesson thoroughly but concisely for a motivated beginner. Course: "'+c.title+'". Lesson: "'+lt+'". Return JSON only: {"lesson":"markdown: 2-4 short sections with a real example, plain language","takeaways":["",""],"quiz":[{"q":"","options":["","",""],"answer":0}]}. Exactly 3 quiz questions; answer = index (0-based) of the correct option. Be factually accurate; name a real book or teacher when relevant.';
+  let d;
+  try{
+    const out=await JARVIS_CORE.streamChat({provider:cfg.provider,apikey:cfg.apikey,url:cfg.url,model:cfg.model,system:sys,messages:[{role:'user',content:'Teach me: '+lt}],json:true});
+    d=JSON.parse((out.match(/\{[\s\S]*\}/)||[out])[0]);
+  }catch(e){ body.innerHTML='<div class="ac-lesson-content">Lesson failed to load — tap back and try again.</div>'; return; }
+  acRenderLesson(key,idx,lt,d);
+}
+
+function acRenderLesson(key,idx,lt,d){
+  const body=document.getElementById('ac-body');
+  let html='<div class="ac-lesson-content"><h3>'+doomEsc(lt)+'</h3>'+acMd(d.lesson||'');
+  if((d.takeaways||[]).length){ html+='<h3>Key takeaways</h3>'; d.takeaways.forEach(t=>{ html+='• '+doomEsc(t)+'<br>'; }); }
+  html+='</div><button class="ac-take" id="ac-take">Take the quiz →</button><div id="ac-quiz"></div>';
+  body.innerHTML=html; body.scrollTop=0;
+  const quiz=d.quiz||[];
+  document.getElementById('ac-take').onclick=()=>acRenderQuiz(key,idx,quiz);
+}
+
+function acRenderQuiz(key,idx,quiz){
+  const take=document.getElementById('ac-take'); if(take) take.style.display='none';
+  const wrap=document.getElementById('ac-quiz');
+  if(!quiz.length){ acSaveDone(key,idx); wrap.innerHTML='<div class="ac-lesson-content">Lesson complete ✓</div><button class="ac-take" onclick="acRenderCourse(\''+key+'\')">Back to lessons</button>'; return; }
+  let html='';
+  quiz.forEach((q,qi)=>{
+    html+='<div class="ac-q"><div class="qt">'+(qi+1)+'. '+doomEsc(q.q)+'</div>';
+    (q.options||[]).forEach((o,oi)=>{ html+='<button class="ac-opt" onclick="acAnswer(this,'+oi+','+(q.answer|0)+')">'+doomEsc(o)+'</button>'; });
+    html+='</div>';
+  });
+  html+='<button class="ac-take" onclick="acFinish(\''+key+'\','+idx+')">Complete lesson ✓</button>';
+  wrap.innerHTML=html;
+}
+
+function acAnswer(btn,chosen,answer){
+  const q=btn.closest('.ac-q'); if(q.dataset.done) return; q.dataset.done='1';
+  q.querySelectorAll('.ac-opt').forEach((b,i)=>{ if(i===answer) b.classList.add('right'); });
+  if(chosen!==answer) btn.classList.add('wrong');
+}
+
+function acFinish(key,idx){ acSaveDone(key,idx); acRenderCourse(key); }
 
 // ── BACKUP / RESTORE (survives iOS clearing localStorage) ──
 function exportSettings() {
