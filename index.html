@@ -58,6 +58,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 @keyframes sys-flick{0%,85%,100%{opacity:.45}87%,91%{opacity:.08}89%,93%{opacity:.6}}
 .icon-btn{background:none;border:none;color:rgba(190,150,160,.4);font-size:17px;cursor:pointer;padding:4px;line-height:1;transition:color .15s}
 .icon-btn:active{color:var(--live)}
+.icon-btn.live{color:var(--live);text-shadow:0 0 8px rgba(200,30,60,.7);animation:hud-line-pulse 1.4s ease-in-out infinite}
 
 /* ── STATUS STRIP ── */
 .strip{flex-shrink:0;display:flex;gap:5px;padding:5px 12px;background:rgba(2,0,7,.98);border-bottom:1px solid rgba(80,0,25,.4);overflow-x:auto;scrollbar-width:none}
@@ -1071,6 +1072,8 @@ strong{color:#e8d4b0}
       </div>
       <button class="icon-btn" onclick="toggleVoiceOut()" id="voice-out-btn" title="Toggle voice output">🔊</button>
       <button class="icon-btn" onclick="toggleHandsFree()" id="hands-free-btn" title="Hands-free conversation" style="opacity:0.4">🗣</button>
+      <button class="icon-btn" onclick="visionLook()" id="vision-btn" title="Let JARVIS see your screen/camera (once)">👁</button>
+      <button class="icon-btn" onclick="toggleWatch()" id="watch-btn" title="Watch my screen/camera continuously">📡</button>
       <button class="icon-btn" onclick="openAcademy()" title="Teacher mode — structured lessons">🎓</button>
       <button class="icon-btn" onclick="openDoom()" title="Doomscroll — insights, games & more">🌀</button>
       <button class="icon-btn" onclick="openCfg()">⚙</button>
@@ -1154,6 +1157,10 @@ let liveYT = null;       // cached real YouTube channel stats
 let lastUserMsg = '';    // latest user message, for memory relevance
 let pendingAttachment = null; // {type:'image'|'file', name, mime, data}
 let attachTargetAgent = '';
+let visionStream = null;      // active screen-share / camera MediaStream
+let visionVideo = null;       // hidden <video> the stream feeds into
+let watchInterval = null;     // continuous-watch timer (also = "is watching")
+let watchSig = null;          // last frame signature, for change detection
 let jarvisMode = null;
 
 // MODES now live in jarvis-core.js (shared with the terminal CLI) — single source of truth.
@@ -1901,7 +1908,7 @@ async function callAPI(agent, messages, onToken) {
   const base = p==='openai' ? 'https://api.openai.com' : 'https://api.groq.com/openai';
   const hasVision = messages.some(m => Array.isArray(m.content));
   let model = cfg.model || 'llama-3.1-8b-instant';
-  if (hasVision && p !== 'openai') model = 'llama-3.2-11b-vision-preview';
+  if (hasVision && p !== 'openai') model = 'meta-llama/llama-4-scout-17b-16e-instruct';
   const res = await fetch(`${base}/v1/chat/completions`, {
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${cfg.apikey}`},
@@ -1943,10 +1950,13 @@ async function callAPIWithPrompt(sysP, messages, onToken) {
   }
   if (!cfg.apikey) throw new Error('No API key. Tap ⚙ to add your key.');
   const base = p==='openai' ? 'https://api.openai.com' : 'https://api.groq.com/openai';
+  const hasVision = messages.some(m => Array.isArray(m.content));
+  let model = cfg.model||'llama-3.1-8b-instant';
+  if (hasVision && p !== 'openai') model = 'meta-llama/llama-4-scout-17b-16e-instruct';
   const res = await fetch(`${base}/v1/chat/completions`, {
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${cfg.apikey}`},
-    body:JSON.stringify({model:cfg.model||'llama-3.1-8b-instant',messages:[{role:'system',content:sysP},...messages],stream:true}),
+    body:JSON.stringify({model,messages:[{role:'system',content:sysP},...messages],stream:true}),
   });
   if (!res.ok) { const t=await res.text().catch(()=>''); throw new Error(`HTTP ${res.status}: ${t||res.statusText}`); }
   const reader=res.body.getReader(); const dec=new TextDecoder(); let full='';
@@ -2014,6 +2024,121 @@ function cmd(text) {
   }
 
   return false;
+}
+
+// ═══════════════════════════════════════════════
+// VISION — let JARVIS see the screen (desktop) or camera (mobile)
+// ═══════════════════════════════════════════════
+async function visionAcquire() {
+  if (visionStream && visionStream.active) return visionStream;
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  try {
+    if (navigator.mediaDevices?.getDisplayMedia && !isMobile) {
+      visionStream = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:1 }, audio:false });
+    } else if (navigator.mediaDevices?.getUserMedia) {
+      visionStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false });
+    } else { toast('This browser can\'t share screen or camera'); return null; }
+  } catch(e) { toast('Vision needs screen-share / camera permission'); return null; }
+  visionVideo = document.createElement('video');
+  visionVideo.autoplay = true; visionVideo.muted = true; visionVideo.playsInline = true;
+  visionVideo.srcObject = visionStream;
+  try { await visionVideo.play(); } catch(e) {}
+  // if the user stops sharing from the browser's own UI, clean up
+  const tr = visionStream.getVideoTracks()[0];
+  if (tr) tr.addEventListener('ended', () => visionStop());
+  await new Promise(r => setTimeout(r, 350));   // let the first frame land
+  return visionStream;
+}
+
+function visionGrab(maxW) {   // returns a JPEG dataURL of the current frame
+  if (!visionVideo || !visionVideo.videoWidth) return null;
+  maxW = maxW || 1280;
+  const vw = visionVideo.videoWidth, vh = visionVideo.videoHeight;
+  const scale = Math.min(1, maxW / vw);
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(vw * scale); cv.height = Math.round(vh * scale);
+  cv.getContext('2d').drawImage(visionVideo, 0, 0, cv.width, cv.height);
+  try { return cv.toDataURL('image/jpeg', 0.7); } catch(e) { return null; }
+}
+
+function visionSig() {   // tiny pixel signature for change detection
+  if (!visionVideo || !visionVideo.videoWidth) return null;
+  const cv = document.createElement('canvas'); cv.width = 24; cv.height = 16;
+  const ctx = cv.getContext('2d'); ctx.drawImage(visionVideo, 0, 0, 24, 16);
+  try { return ctx.getImageData(0, 0, 24, 16).data; } catch(e) { return null; }
+}
+function sigDiff(a, b) {
+  if (!a || !b || a.length !== b.length) return 1;
+  let d = 0; for (let i = 0; i < a.length; i += 4) d += Math.abs(a[i]-b[i]) + Math.abs(a[i+1]-b[i+1]) + Math.abs(a[i+2]-b[i+2]);
+  return d / (a.length / 4 * 3 * 255);   // 0..1
+}
+
+function visionStop() {
+  if (watchInterval) { clearInterval(watchInterval); watchInterval = null; }
+  if (visionStream) { try { visionStream.getTracks().forEach(t => t.stop()); } catch(e){} visionStream = null; }
+  visionVideo = null; watchSig = null;
+  document.getElementById('watch-btn')?.classList.remove('live');
+  document.getElementById('vision-btn')?.classList.remove('live');
+}
+
+// 👁 one-shot: grab a single frame, ask JARVIS, then release the stream
+async function visionLook(q) {
+  if (busy) return;
+  const keepAlive = !!(visionStream && visionStream.active);   // reuse if we're already watching
+  const s = await visionAcquire(); if (!s) return;
+  const frame = visionGrab(1280);
+  if (!frame) { toast('No frame yet — try again'); if (!keepAlive) visionStop(); return; }
+  switchTab('jarvis');
+  addMsg('jarvis','user','👁 [shared a view]');
+  pushConvo('jarvis','user', q || 'Look at this.');
+  busy = true;
+  const el = mkStream('jarvis');
+  try {
+    const msgs = (convos['jarvis']||[]).slice(-8);
+    const last = msgs[msgs.length-1];
+    if (last) last.content = [
+      { type:'image_url', image_url:{ url:frame } },
+      { type:'text', text: q || 'What is on my screen right now? Describe it and give me anything useful or actionable.' },
+    ];
+    const full = await callAPI('jarvis', msgs, t => el?.upd(t));
+    el?.fin(full); pushConvo('jarvis','assistant',full); sfx('recv');
+    if (voiceOut) speak(full);
+  } catch(e) { el?.fin(`⚠ ${e.message}`); }
+  busy = false;
+  if (!keepAlive && !watchInterval) visionStop();   // release a one-shot stream
+}
+
+// 📡 continuous watch: frame on an interval, but only narrate when the view changes
+async function toggleWatch() {
+  if (watchInterval) { visionStop(); toast('👁 watch off'); return; }
+  const s = await visionAcquire(); if (!s) return;
+  document.getElementById('watch-btn')?.classList.add('live');
+  document.getElementById('vision-btn')?.classList.add('live');
+  toast('👁 watching live — tap 📡 to stop');
+  let first = true;
+  const tick = async () => {
+    if (!visionStream || busy) return;
+    const sig = visionSig();
+    if (!first && watchSig && sigDiff(sig, watchSig) < 0.04) return;   // nothing meaningful changed
+    watchSig = sig; first = false;
+    const frame = visionGrab(800); if (!frame) return;
+    switchTab('jarvis');
+    busy = true;
+    const el = mkStream('jarvis');
+    try {
+      const sysP = sysPrompt('jarvis') + '\n\nYou are WATCHING the user\'s screen/camera live. Reply in ONE short sentence about what is notable or changed right now — terse, no preamble.';
+      const msgs = [{ role:'user', content:[
+        { type:'image_url', image_url:{ url:frame } },
+        { type:'text', text:'What changed / is notable now? One short sentence.' },
+      ] }];
+      const full = await callAPIWithPrompt(sysP, msgs, t => el?.upd(t));
+      el?.fin(full); pushConvo('jarvis','assistant',full); sfx('recv');
+      if (voiceOut) speak(full);
+    } catch(e) { el?.fin(`⚠ ${e.message}`); }
+    busy = false;
+  };
+  watchInterval = setInterval(tick, 8000);
+  tick();
 }
 
 // ═══════════════════════════════════════════════
