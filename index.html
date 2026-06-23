@@ -910,6 +910,12 @@ strong{color:#e8d4b0}
 .ac-opt{display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:7px;border:1px solid var(--red-b);border-radius:8px;background:var(--red-d);color:var(--text);font-family:inherit;font-size:14px;cursor:pointer}
 .ac-opt.right{background:rgba(10,125,44,.32);border-color:#0a7d2c;color:#fff}
 .ac-opt.wrong{background:rgba(150,20,40,.3);border-color:#a02030}
+.ac-module{display:flex;align-items:center;gap:10px;padding:13px 15px;margin:16px 0 9px;border:1px solid var(--gold-b);border-radius:10px;background:var(--gold-d);cursor:pointer}
+.ac-module.done{opacity:.6}
+.ac-module .mt{flex:1;color:#fff;font-size:14px;font-weight:bold;letter-spacing:.3px}
+.ac-module .mc{color:#c89400;font-size:12px;font-weight:bold;white-space:nowrap}
+.ac-module .mch{color:var(--text-d);font-size:13px;width:14px;text-align:center}
+.ac-mod-lessons{margin-left:3px}
 </style>
 </head>
 <body>
@@ -1578,7 +1584,7 @@ ACADEMY.forEach(c => {
   (c.modules||[]).forEach(m => lens.forEach(L => out.push(L.replace('{t}', m).replace(/^./, ch => ch.toUpperCase()))));
   c.lessons = out;
 });
-let acCourse = null, acView = 'grid';
+let acCourse = null, acView = 'grid', acCollapsed = {};
 
 function acProgress(){ try{ return JSON.parse(localStorage.getItem('jv-academy')||'{}'); }catch(e){ return {}; } }
 function acSaveDone(key, idx){ const p=acProgress(); p[key]=p[key]||[]; if(!p[key].includes(idx)) p[key].push(idx); try{ localStorage.setItem('jv-academy', JSON.stringify(p)); }catch(e){} }
@@ -1607,10 +1613,27 @@ function acRenderCourse(key){
   const c=ACADEMY.find(x=>x.key===key);
   document.getElementById('ac-title').textContent=c.icon+'  '+c.title;
   const done=acProgress()[key]||[], body=document.getElementById('ac-body'); body.innerHTML=''; body.scrollTop=0;
-  c.lessons.forEach((lt,i)=>{
-    const el=document.createElement('div'); el.className='ac-lesson'+(done.includes(i)?' done':'');
-    el.innerHTML='<div class="n">'+(done.includes(i)?'✓':(i+1))+'</div><div class="lt">'+doomEsc(lt)+'</div>';
-    el.onclick=()=>acOpenLesson(key,i); body.appendChild(el);
+  const mods=c.modules||[], per=Math.max(1,Math.round(c.lessons.length/(mods.length||1)));
+  // default-open the first module that isn't fully complete
+  let firstOpen=-1;
+  mods.forEach((m,mi)=>{ let all=true; for(let j=0;j<per;j++) if(!done.includes(mi*per+j)) all=false; if(!all&&firstOpen<0) firstOpen=mi; });
+  if(firstOpen<0) firstOpen=0;
+  mods.forEach((m,mi)=>{
+    const sIdx=mi*per; let dcount=0; for(let j=0;j<per;j++) if(done.includes(sIdx+j)) dcount++;
+    const ck=key+':'+mi;
+    if(acCollapsed[ck]===undefined) acCollapsed[ck]=(mi!==firstOpen);   // only the first unfinished module starts open
+    const open=!acCollapsed[ck];
+    const hdr=document.createElement('div'); hdr.className='ac-module'+(dcount>=per?' done':'');
+    hdr.innerHTML='<div class="mt">'+doomEsc(m.charAt(0).toUpperCase()+m.slice(1))+'</div><div class="mc">'+dcount+'/'+per+'</div><div class="mch">'+(open?'▾':'▸')+'</div>';
+    const wrap=document.createElement('div'); wrap.className='ac-mod-lessons'; wrap.style.display=open?'':'none';
+    for(let j=0;j<per;j++){
+      const i=sIdx+j; if(i>=c.lessons.length) break;
+      const el=document.createElement('div'); el.className='ac-lesson'+(done.includes(i)?' done':'');
+      el.innerHTML='<div class="n">'+(done.includes(i)?'✓':(i+1))+'</div><div class="lt">'+doomEsc(c.lessons[i])+'</div>';
+      el.onclick=()=>acOpenLesson(key,i); wrap.appendChild(el);
+    }
+    hdr.onclick=()=>{ acCollapsed[ck]=!acCollapsed[ck]; const sh=!acCollapsed[ck]; wrap.style.display=sh?'':'none'; hdr.querySelector('.mch').textContent=sh?'▾':'▸'; };
+    body.appendChild(hdr); body.appendChild(wrap);
   });
 }
 
