@@ -179,7 +179,7 @@ Commands: "status" · "list" · "add product X" · "set income X" · "[name] mod
     if (!apikey) throw new Error('No API key configured.');
     const baseUrl = provider === 'openai' ? 'https://api.openai.com' : 'https://api.groq.com/openai';
     let m = model || 'llama-3.1-8b-instant';
-    if (hasVision && provider !== 'openai') m = 'llama-3.2-11b-vision-preview';
+    if (hasVision && provider !== 'openai') m = 'meta-llama/llama-4-scout-17b-16e-instruct';
     const res = await fetch(`${baseUrl}/v1/chat/completions`, {
       method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apikey}`}, body: body(m),
     });

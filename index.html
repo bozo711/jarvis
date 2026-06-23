@@ -1362,6 +1362,7 @@ const DOOM_TOPICS = [
   {key:'ancient', label:'Ancient Wisdom',     vq:'Emerald Tablets of Thoth Hermes Trismegistus explained',           hint:'ancient wisdom — the Emerald Tablets of Thoth / Hermes Trismegistus, "as above, so below", hermeticism, alchemy as inner transformation. Present what the texts actually say.'},
   {key:'stoic',   label:'Stoicism',          vq:'Marcus Aurelius stoicism explained',                               hint:'Stoic philosophy from real sources — "Meditations" (Marcus Aurelius), Epictetus, Seneca. Practical, applicable.'},
   {key:'wealth',  label:'Wealth',            vq:'wealth mindset Napoleon Hill lecture',                             hint:'wealth and success principles from real books — "Think and Grow Rich" (Napoleon Hill), "The Richest Man in Babylon", "Rich Dad Poor Dad"'},
+  {key:'eng',     label:'Engineering',       vq:'system design concepts explained engineer',                        hint:'software engineering & system design — Docker, Kubernetes, containerisation, CI/CD, the cloud (AWS S3/SQS/Lambda/DynamoDB), serverless, load balancers, caching, proxies, sharding/partitioning, rate limiting, throughput/QPS, websockets, RPC, polling, Kafka/RabbitMQ, encryption, firewalls, git. Teach the concept clearly and name the tool.'},
 ];
 let doomTopic = 'foryou';
 let doomDepth = parseInt(localStorage.getItem('jv-doom-depth')||'0', 10);  // grows the longer you use it → deeper content
@@ -1539,6 +1540,11 @@ const ACADEMY = [
   {key:'stoic', icon:'🏛️', title:'Stoic Philosophy', lessons:['What Stoicism really teaches','The dichotomy of control','Negative visualization','Amor fati: love your fate','A daily Stoic practice']},
   {key:'money', icon:'💰', title:'Money and Wealth', lessons:['How money actually works','Assets vs liabilities','Pay yourself first','Building income streams','Think and Grow Rich principles']},
   {key:'finance', icon:'🧾', title:'Personal Finance and Taxes', lessons:['Budgeting that sticks','Emergency fund and killing debt','Self-employment tax basics','Deductions for creators','Investing fundamentals']},
+  {key:'cloud', icon:'☁️', title:'Cloud and AWS', lessons:['What the cloud actually is','S3 and object storage','Queues: SQS, Kafka and RabbitMQ','Lambda and serverless','DynamoDB and cloud databases']},
+  {key:'devops', icon:'🚢', title:'DevOps and Deployment', lessons:['Docker and containerisation','Kubernetes explained','CI/CD pipelines','Staging and deployments','Git, GitHub and cherry-pick']},
+  {key:'sysdesign', icon:'🏗️', title:'System Design', lessons:['Load balancers and proxies','Caching','Sharding and partitioning','Availability, throughput and QPS','Rate limiting and scaling']},
+  {key:'backend', icon:'🔌', title:'Backend and Networking', lessons:['APIs and RPC','WebSockets vs long and short polling','FTP and file transfer','Encryption and firewalls','Error logging and monitoring']},
+  {key:'datatools', icon:'🛠️', title:'Databases and Dev Tools', lessons:['Database optimisation','Embedded databases','PyCharm and developer tools','TensorFlow and ML basics','How it all fits together']},
 ];
 let acCourse = null, acView = 'grid';
 
