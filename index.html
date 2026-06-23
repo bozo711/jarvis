@@ -1538,21 +1538,46 @@ function closeDoom(){ document.getElementById('doom').classList.remove('open'); 
 // ════════════════════════════════════════════════
 // ACADEMY — Teacher Mode: structured courses, lessons taught step-by-step, quizzes
 // ════════════════════════════════════════════════
+// Lenses turn each course's sub-topics into many concrete lessons (deterministic → stable indices)
+const AC_LENS = {
+  mind: [
+    '{t} — the core idea','{t}: where it comes from','{t}, with a real example',
+    'Common myths about {t}','How {t} shapes your reality','A daily practice: {t}',
+    'Applying {t} to building wealth','{t}: the mechanics','{t} — your action step this week',
+  ],
+  wealth: [
+    '{t}: the fundamentals','{t}, with a real example','The numbers behind {t}',
+    'Common mistakes with {t}','{t} for a digital-product creator','Tools and systems for {t}',
+    'A case study: {t}','{t} — your action step this week','{t}: going deeper',
+  ],
+  tech: [
+    '{t} — in plain English','How {t} works','{t}: a real-world example',
+    'When to use {t}','Common pitfalls with {t}','Hands-on with {t}',
+    'Best practices for {t}','Explaining {t} in an interview','{t}: going deeper',
+  ],
+};
+
 const ACADEMY = [
-  {key:'subconscious', icon:'🧠', title:'The Subconscious Mind', lessons:['How the subconscious actually works','Why repetition reprograms you','Beliefs and the placebo effect','Visualization and mental rehearsal','A daily practice to rewire your mind']},
-  {key:'quantum', icon:'⚛️', title:'Quantum Reality', lessons:['What quantum physics really is','The double-slit experiment','The observer effect and its myths','Superposition and entanglement','What it does and does not mean for you']},
-  {key:'assumption', icon:'✨', title:'The Law of Assumption', lessons:['Neville Goddard: the core idea','Living in the wish fulfilled','Feeling is the secret','Revision: editing the past','Persistence and faith']},
-  {key:'laws', icon:'🌀', title:'The 7 Universal Laws', lessons:['The Law of Mentalism','Correspondence: as above so below','The Law of Vibration','Polarity and Rhythm','Cause and Effect, and Gender']},
-  {key:'ancient', icon:'📜', title:'Ancient Wisdom', lessons:['Hermes Trismegistus and the Emerald Tablets','As above, so below','Alchemy as inner transformation','Roots of the Kybalion','Applying hermetic principles']},
-  {key:'stoic', icon:'🏛️', title:'Stoic Philosophy', lessons:['What Stoicism really teaches','The dichotomy of control','Negative visualization','Amor fati: love your fate','A daily Stoic practice']},
-  {key:'money', icon:'💰', title:'Money and Wealth', lessons:['How money actually works','Assets vs liabilities','Pay yourself first','Building income streams','Think and Grow Rich principles']},
-  {key:'finance', icon:'🧾', title:'Personal Finance and Taxes', lessons:['Budgeting that sticks','Emergency fund and killing debt','Self-employment tax basics','Deductions for creators','Investing fundamentals']},
-  {key:'cloud', icon:'☁️', title:'Cloud and AWS', lessons:['What the cloud actually is','S3 and object storage','Queues: SQS, Kafka and RabbitMQ','Lambda and serverless','DynamoDB and cloud databases']},
-  {key:'devops', icon:'🚢', title:'DevOps and Deployment', lessons:['Docker and containerisation','Kubernetes explained','CI/CD pipelines','Staging and deployments','Git, GitHub and cherry-pick']},
-  {key:'sysdesign', icon:'🏗️', title:'System Design', lessons:['Load balancers and proxies','Caching','Sharding and partitioning','Availability, throughput and QPS','Rate limiting and scaling']},
-  {key:'backend', icon:'🔌', title:'Backend and Networking', lessons:['APIs and RPC','WebSockets vs long and short polling','FTP and file transfer','Encryption and firewalls','Error logging and monitoring']},
-  {key:'datatools', icon:'🛠️', title:'Databases and Dev Tools', lessons:['Database optimisation','Embedded databases','PyCharm and developer tools','TensorFlow and ML basics','How it all fits together']},
+  {key:'subconscious', icon:'🧠', title:'The Subconscious Mind', arch:'mind', modules:['how the subconscious works','the conscious vs subconscious mind','how beliefs form','repetition and neural pathways','the reticular activating system','autosuggestion (Émile Coué)','the placebo and nocebo effect','visualization and mental rehearsal','affirmations that actually work','self-image (Psycho-Cybernetics)','habits and the subconscious','emotions as programming','the power of the spoken word','reprogramming before sleep']},
+  {key:'quantum', icon:'⚛️', title:'Quantum Reality', arch:'mind', modules:['what quantum physics really is','the double-slit experiment','the observer effect','superposition','quantum entanglement','wave-particle duality','the uncertainty principle','quantum fields','measurement and collapse','what it does NOT mean for manifestation','science vs metaphysics','great physicists and their views','quantum in everyday technology','probability and reality']},
+  {key:'assumption', icon:'✨', title:'The Law of Assumption', arch:'mind', modules:['Neville Goddard’s core teaching','living in the wish fulfilled','feeling is the secret','imagination creates reality','revision: editing the past','assumption vs attraction','persistence and faith','assuming the feeling of the wish','occupying a new state','the SATS technique','I AM and identity','ignoring the current facts','the art of letting go','testing the law for yourself']},
+  {key:'laws', icon:'🌀', title:'The Universal Laws', arch:'mind', modules:['the principle of Mentalism','the principle of Correspondence','the principle of Vibration','the principle of Polarity','the principle of Rhythm','the principle of Cause and Effect','the principle of Gender','the Law of Attraction','perpetual transmutation of energy','the Law of Relativity','the Law of Compensation','divine oneness','using the laws together','the Kybalion as a source']},
+  {key:'ancient', icon:'📜', title:'Ancient Wisdom', arch:'mind', modules:['Hermes Trismegistus','the Emerald Tablet','as above, so below','the seven Hermetic principles','alchemy as inner transformation','the Kybalion','Thoth and ancient Egypt','the Akashic records','sacred geometry','the mystery schools','Gnostic wisdom','Eastern parallels (Tao, Vedas)','myth as encoded knowledge','applying hermetic wisdom today']},
+  {key:'stoic', icon:'🏛️', title:'Stoic Philosophy', arch:'mind', modules:['what Stoicism really teaches','the dichotomy of control','Marcus Aurelius and Meditations','Epictetus and the Enchiridion','Seneca on time and wealth','negative visualization','amor fati','memento mori','the four Stoic virtues','mastering anger and desire','voluntary discomfort','the view from above','journaling like a Stoic','Stoicism for an entrepreneur']},
+  {key:'money', icon:'💰', title:'Money and Wealth', arch:'wealth', modules:['how money actually works','assets vs liabilities','pay yourself first','cash flow','building income streams','active vs passive income','Think and Grow Rich principles','the psychology of money','compound interest','good debt vs bad debt','the wealthy mindset','Rich Dad Poor Dad lessons','scarcity vs abundance','creating value people pay for']},
+  {key:'finance', icon:'🧾', title:'Personal Finance and Taxes', arch:'wealth', modules:['budgeting that sticks','an emergency fund','killing high-interest debt','credit scores and credit','self-employment tax basics','quarterly estimated taxes','deductions for creators','LLC vs sole proprietor','bookkeeping for a solo business','retirement accounts (IRA, Roth, SEP)','investing fundamentals','index funds and ETFs','separating business and personal money','pricing your digital products']},
+  {key:'cloud', icon:'☁️', title:'Cloud and AWS', arch:'tech', modules:['what the cloud is','IaaS vs PaaS vs SaaS','S3 and object storage','EC2 and virtual machines','Lambda and serverless','DynamoDB','SQS message queues','Kafka and event streaming','RabbitMQ','API Gateway','CloudFront and CDNs','IAM and cloud security','cloud cost management','regions and availability zones']},
+  {key:'devops', icon:'🚢', title:'DevOps and Deployment', arch:'tech', modules:['Docker and containers','container images and registries','Kubernetes','pods, services and deployments','CI/CD pipelines','GitHub Actions','staging vs production','infrastructure as code (Terraform)','monitoring and observability','logging and alerting','blue-green and canary deploys','secrets management','Git workflows and cherry-pick','rollbacks and incident response']},
+  {key:'sysdesign', icon:'🏗️', title:'System Design', arch:'tech', modules:['load balancers','reverse proxies','caching strategies','sharding and partitioning','replication','the CAP theorem','throughput, latency and QPS','rate limiting','consistent hashing','message queues in design','database indexing','CDNs and the edge','designing for scale','back-of-the-envelope estimation']},
+  {key:'backend', icon:'🔌', title:'Backend and Networking', arch:'tech', modules:['REST APIs','RPC and gRPC','GraphQL','WebSockets vs polling','authentication and JWT','OAuth and SSO','encryption (TLS and at rest)','firewalls and network security','DNS','the HTTP protocol','file transfer (FTP, S3)','error logging and monitoring','idempotency and retries','API versioning']},
+  {key:'datatools', icon:'🛠️', title:'Databases and Dev Tools', arch:'tech', modules:['SQL vs NoSQL','database indexing','query performance tuning','embedded databases (SQLite)','ORMs and when to skip them','PyCharm and dev tools','version control with Git','TensorFlow and ML basics','data pipelines','Redis and caching stores','vector databases','backups and migrations','testing and CI','how it all fits together']},
 ];
+// Expand modules × lenses into each course's stable lesson list (~100+ each)
+ACADEMY.forEach(c => {
+  const lens = AC_LENS[c.arch] || AC_LENS.mind, out = [];
+  (c.modules||[]).forEach(m => lens.forEach(L => out.push(L.replace('{t}', m).replace(/^./, ch => ch.toUpperCase()))));
+  c.lessons = out;
+});
 let acCourse = null, acView = 'grid';
 
 function acProgress(){ try{ return JSON.parse(localStorage.getItem('jv-academy')||'{}'); }catch(e){ return {}; } }
