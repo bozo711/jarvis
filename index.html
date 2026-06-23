@@ -1984,6 +1984,12 @@ function cmd(text) {
     || (t === 'exit mode' || t === 'clear mode' || t === 'no mode' ? ['', 'exit'] : null);
   if (modeMatch) { return activateMode((modeMatch[1]||modeMatch[0]).trim()); }
 
+  // beat intent → actually MAKE and play a beat (not explain how to)
+  const beatReq = /\b(make|gen(?:erate)?|create|produce|cook|build|drop|give me|need|want|lemme hear)\b[^.]{0,40}\b(beat|808|trap|drill|boom ?bap|lo-?fi|lofi|instrumental|type beat)\b/i.test(text)
+    || /\b(trap|drill|boom ?bap|lo-?fi|lofi|house|hip ?hop)\b[^.]{0,15}\bbeat\b/i.test(text)
+    || /^(beat|make a beat|another beat|new beat)\b/i.test(text);
+  if (beatReq && !/how (do|to|can)\b/i.test(text)) { makeBeat(text); return true; }
+
   if (t==='status') {
     const pct = cfg.goal>0?Math.round((cfg.income/cfg.goal)*100):0;
     const products = cfg.done||[];
@@ -4686,15 +4692,16 @@ function getMelReverb() {
   return melReverbNode;
 }
 
-function playMelNote(freq, time) {
-  const ctx = getBeatCtx();
+function playMelNote(freq, time, ctx) {
+  const offline = !!ctx;            // a passed ctx means we're rendering to a file (dry, no shared reverb)
+  ctx = ctx || getBeatCtx();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = melWave;
   osc.frequency.value = freq;
   osc.connect(gain);
   gain.connect(ctx.destination);
-  if (melReverb) {
+  if (melReverb && !offline) {
     const send = ctx.createGain(); send.gain.value = 0.3;
     gain.connect(send); send.connect(getMelReverb());
   }
@@ -4775,8 +4782,8 @@ function makeNoiseBuf(ctx, secs) {
   return b;
 }
 
-function synthDrum(track, time) {
-  const ctx = getBeatCtx();
+function synthDrum(track, time, ctx) {
+  ctx = ctx || getBeatCtx();
   const out = ctx.createGain(); out.gain.value = 1; out.connect(ctx.destination);
 
   if (track === 'KICK') {
@@ -4838,16 +4845,16 @@ function synthDrum(track, time) {
   }
 }
 
-function playBeatDrum(trackIdx, time) {
+function playBeatDrum(trackIdx, time, ctx) {
+  ctx = ctx || getBeatCtx();
   const name = BEAT_TRACKS[trackIdx];
   if (beatSamples[name]) {
-    const ctx = getBeatCtx();
     const src = ctx.createBufferSource();
     src.buffer = beatSamples[name];
     src.connect(ctx.destination);
     src.start(time);
   } else {
-    synthDrum(name, time);
+    synthDrum(name, time, ctx);
   }
 }
 
@@ -5054,7 +5061,8 @@ function injectBeatPlayer(bubble, pat) {
   <div class="beat-viz" id="bviz-${Date.now()}">
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
-  <button class="chat-beat-btn" onclick="toggleBeat()">▶ PLAY BEAT</button>`;
+  <button class="chat-beat-btn" onclick="toggleBeat()">▶ PLAY BEAT</button>
+  <button class="chat-beat-btn" onclick="downloadBeatWav()" style="margin-top:5px">⬇ SAVE AS WAV</button>`;
   bubble.appendChild(card);
 }
 
@@ -5125,11 +5133,142 @@ function applyBeatPattern(pat) {
 }
 
 
+// ── make a beat for real: generate a pattern, load it, and PLAY it ──────────
+function stripBeatBlock(t) {
+  return (t || '').replace(/\[BEAT_PATTERN\][\s\S]*?\[\/BEAT_PATTERN\]/g, '')
+                  .replace(/```json[\s\S]*?```/g, '').trim();
+}
+
+// robust fallback parse if the model didn't use the [BEAT_PATTERN] tags
+function parseLooseBeat(text) {
+  const cands = [];
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) cands.push(fence[1]);
+  const brace = text.match(/\{[\s\S]*\}/);
+  if (brace) cands.push(brace[0]);
+  for (const c of cands) { try { const o = JSON.parse(c.trim()); if (o && (o.kick || o.drums)) return o; } catch (e) {} }
+  return null;
+}
+
+// fully local beat generator — guarantees an audible beat with no API / offline
+function genLocalBeat(request) {
+  const r = (request || '').toLowerCase();
+  const S = {
+    trap:       { bpm:140, key:'C',  scale:'Minor',     wave:'sawtooth',
+      kick:[1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,1], openhat:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+      clap:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0], perc:[0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0], deg:[0,2,4,3] },
+    drill:      { bpm:142, key:'F',  scale:'Minor',     wave:'sawtooth',
+      kick:[1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0], snare:[0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0],
+      hihat:[1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1], openhat:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      clap:[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0], perc:[0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0], deg:[0,3,2,4] },
+    'boom bap': { bpm:90,  key:'A',  scale:'Min Penta', wave:'triangle',
+      kick:[1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0], snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0], openhat:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      clap:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], perc:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], deg:[0,2,3,1] },
+    lofi:       { bpm:75,  key:'D',  scale:'Minor',     wave:'sine',
+      kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0], snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0], openhat:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      clap:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], perc:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], deg:[0,2,4,3] },
+    house:      { bpm:124, key:'A',  scale:'Minor',     wave:'sawtooth',
+      kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0], snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      hihat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0], openhat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      clap:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0], perc:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], deg:[0,4,2,4] },
+  };
+  let style = 'trap';
+  if (/drill/.test(r)) style = 'drill';
+  else if (/boom ?bap|old ?school|90s|dilla|9th wonder/.test(r)) style = 'boom bap';
+  else if (/lo-?fi|chill|study|sleep|jazzy/.test(r)) style = 'lofi';
+  else if (/house|edm|dance|techno|club/.test(r)) style = 'house';
+  const s = S[style];
+  // build a melody from real scale degrees so the notes always exist in key+scale
+  const rootIdx = ROOT_NOTES.indexOf(s.key), rootMidi = 48 + rootIdx;
+  const intervals = SCALES[s.scale] || SCALES['Minor'];
+  const melody = s.deg.map((d, n) => {
+    const semi = intervals[d % intervals.length], midi = rootMidi + semi;
+    return { note: ROOT_NOTES[(rootIdx + semi) % 12] + (Math.floor(midi / 12) - 1), step: n * 4 };
+  });
+  return { _style:style, bpm:s.bpm, key:s.key, scale:s.scale, wave:s.wave,
+    kick:s.kick, snare:s.snare, hihat:s.hihat, openhat:s.openhat, clap:s.clap, perc:s.perc, melody };
+}
+
+async function makeBeat(request) {
+  if (busy) return;
+  request = (request || '').trim() || 'Make me a trap beat';
+  switchTab('jarvis');
+  addMsg('jarvis', 'user', request);
+  sfx('send');
+  busy = true;
+  const el = mkStream('jarvis');
+  let pat = null, full = '';
+  const haveModel = (cfg.provider === 'ollama') ? !!cfg.url : !!cfg.apikey;
+  if (haveModel) {
+    try {
+      const sysP = beatPrompt() + '\n\nOutput the [BEAT_PATTERN]{...}[/BEAT_PATTERN] block FIRST, then ONE short sentence on the vibe. You ARE making the beat — never give step-by-step instructions or tell the user to make it themselves.';
+      full = await callAPIWithPrompt(sysP, [{ role:'user', content:request }], t => el?.upd(stripBeatBlock(t) || '🎛 cooking…'));
+      pat = parseBeatPattern(full) || parseLooseBeat(full);
+    } catch (e) { full = ''; }
+  }
+  if (!pat) {
+    pat = genLocalBeat(request);
+    full = `🎛 Cooked a ${pat._style} beat — ${pat.bpm} BPM, ${pat.key} ${pat.scale}. It's playing now; tap ▶ to replay or ⬇ to save it as a WAV.`;
+  } else {
+    full = stripBeatBlock(full) || `🎛 Beat ready — ${pat.bpm || beatBpm} BPM. Playing now.`;
+  }
+  el?.fin(full);
+  pushConvo('jarvis', 'assistant', full);
+  sfx('recv');
+  applyBeatPattern(pat);   // loads the grid, injects the player card, and auto-plays
+  busy = false;
+}
+
+// ── export the current beat to a downloadable WAV file (offline render) ──────
+async function downloadBeatWav() {
+  try {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) { toast('WAV export not supported in this browser'); return; }
+    const bars = 2, totalSteps = 16 * bars, spb = 60 / beatBpm / 4, sr = 44100;
+    const off = new OAC(2, Math.ceil(sr * (totalSteps * spb + 0.8)), sr);
+    for (let s = 0; s < totalSteps; s++) {
+      const step = s % 16, t = s * spb;
+      BEAT_TRACKS.forEach((_, i) => { if (beatPattern[i][step]) playBeatDrum(i, t, off); });
+      melNotes.forEach((note, ni) => { if (melPattern[ni] && melPattern[ni][step]) playMelNote(note.freq, t, off); });
+    }
+    toast('Rendering WAV…');
+    const buf = await off.startRendering();
+    const blob = new Blob([audioBufferToWav(buf)], { type:'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `jarvis-beat-${beatBpm}bpm-${Date.now()}.wav`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Beat saved as WAV ⬇');
+  } catch (e) { toast('WAV export failed: ' + e.message); }
+}
+
+function audioBufferToWav(buf) {
+  const nCh = buf.numberOfChannels, sr = buf.sampleRate, total = buf.length * nCh * 2 + 44;
+  const ab = new ArrayBuffer(total), view = new DataView(ab);
+  const wr = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
+  let o = 0;
+  wr(o, 'RIFF'); o += 4; view.setUint32(o, total - 8, true); o += 4; wr(o, 'WAVE'); o += 4;
+  wr(o, 'fmt '); o += 4; view.setUint32(o, 16, true); o += 4; view.setUint16(o, 1, true); o += 2;
+  view.setUint16(o, nCh, true); o += 2; view.setUint32(o, sr, true); o += 4;
+  view.setUint32(o, sr * nCh * 2, true); o += 4; view.setUint16(o, nCh * 2, true); o += 2;
+  view.setUint16(o, 16, true); o += 2; wr(o, 'data'); o += 4; view.setUint32(o, total - 44, true); o += 4;
+  const chans = []; for (let c = 0; c < nCh; c++) chans.push(buf.getChannelData(c));
+  for (let i = 0; i < buf.length; i++) for (let c = 0; c < nCh; c++) {
+    const v = Math.max(-1, Math.min(1, chans[c][i]));
+    view.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2;
+  }
+  return ab;
+}
+
 async function genTypeBeat() {
   const inp = document.getElementById('beat-type-inp');
   const artist = (inp ? inp.value.trim() : '') || 'trap';
   if (inp) inp.value = '';
-  await beatCmd(`Make me a "${artist}" type beat. Generate a complete pattern — drums, melody, BPM, key, scale — that captures that exact sound and auto-load it into the sequencer.`);
+  await makeBeat(`Make me a "${artist}" type beat — capture that exact sound.`);
 }
 
 function handleBeatKey(e) {
@@ -5152,7 +5291,7 @@ function sendTax() { send('jarvis'); }
 function sendBeatMsg() { send('jarvis'); }
 // (repaired) these were called but their definitions were lost in a prior edit
 function renderCodeMsgs() {}
-function beatCmd(msg) { const inp = document.getElementById('i-jarvis'); if (inp) inp.value = msg; return send('jarvis'); }
+function beatCmd(msg) { return makeBeat(msg); }
 
 // ── CONTEXT CLEANER ──
 function cleanJarvis() {
