@@ -1327,7 +1327,10 @@ const DOOM_TOPICS = [
   {key:'wealth',  label:'Wealth',            vq:'wealth mindset Napoleon Hill lecture',                             hint:'wealth and success principles from real books — "Think and Grow Rich" (Napoleon Hill), "The Richest Man in Babylon", "Rich Dad Poor Dad"'},
 ];
 let doomTopic = 'foryou';
-let doomVideos = [];
+let doomDepth = parseInt(localStorage.getItem('jv-doom-depth')||'0', 10);  // grows the longer you use it → deeper content
+let doomShown = new Set();   // video ids already shown (no repeats)
+let doomCache = {};          // "topicKey|level" -> [videos]
+let doomRot = 0;             // For-You topic rotation
 const STARTER_INSIGHTS = [
   {category:'Mindset', title:'Done beats perfect', text:'A shipped B+ earns; a perfect idea in your head earns nothing. Lower the bar to start, raise it while improving.', source:''},
   {category:'Mind', title:'You become what you repeat', text:'The subconscious learns by repetition, not intensity. Feed it the same calm thought daily and it rewires toward it.', source:'The Power of Your Subconscious Mind — Joseph Murphy'},
@@ -1365,17 +1368,40 @@ function insightCard(o){
 
 function videoCard(v){
   const c = document.createElement('div'); c.className='doom-card game';
-  c.innerHTML = '<div class="doom-cat" style="color:#c0506a">▶ Watch · '+doomEsc(v.channel||'clip')+'</div>'
+  c.innerHTML = '<div class="doom-cat" style="color:#c0506a">▶ '+(v.topic?doomEsc(v.topic)+' · ':'')+doomEsc(v.channel||'clip')+'</div>'
     + '<iframe class="doom-video" src="https://www.youtube.com/embed/'+encodeURIComponent(v.id)+'?rel=0&modestbranding=1" allow="encrypted-media;picture-in-picture" allowfullscreen loading="lazy"></iframe>'
     + '<div class="doom-vtitle">'+doomEsc(v.title||'')+'</div><div class="doom-hint">▲ swipe up for more</div>';
   return c;
 }
 
-async function doomLoadVideos(){
-  if(!cfg.ytKey || !window.JARVIS_CORE) { doomVideos = []; return; }
-  const t = DOOM_TOPICS.find(x => x.key === doomTopic) || DOOM_TOPICS[0];
-  try { doomVideos = await JARVIS_CORE.fetchYouTubeSearch(cfg.ytKey, t.vq, 6) || []; }
-  catch(e){ doomVideos = []; }
+function doomDepthSuffix(){ return ['', ' deep dive', ' lecture', ' advanced lecture', ' masterclass'][Math.min(doomDepth, 4)]; }
+
+function doomPickTopic(){
+  if(doomTopic === 'foryou'){
+    let t = DOOM_TOPICS[doomRot++ % DOOM_TOPICS.length];
+    if(t.key === 'foryou') t = DOOM_TOPICS[doomRot++ % DOOM_TOPICS.length];
+    return t;
+  }
+  return DOOM_TOPICS.find(x => x.key === doomTopic) || DOOM_TOPICS[0];
+}
+
+// next unseen clip — rotates topics (For You) and deepens with use
+async function nextVideo(){
+  if(!cfg.ytKey || !window.JARVIS_CORE) return null;
+  for(let tries=0; tries < DOOM_TOPICS.length + 1; tries++){
+    const t = doomPickTopic();
+    const key = t.key + '|' + Math.min(doomDepth, 4);
+    if(!doomCache[key] || !doomCache[key].length){
+      try { doomCache[key] = await JARVIS_CORE.fetchYouTubeSearch(cfg.ytKey, t.vq + doomDepthSuffix(), 6) || []; }
+      catch(e){ doomCache[key] = []; }
+    }
+    while(doomCache[key].length){
+      const v = doomCache[key].shift();
+      if(v && v.id && !doomShown.has(v.id)){ doomShown.add(v.id); v.topic = t.label; return v; }
+    }
+    if(doomTopic !== 'foryou') break;   // a single chosen lane can run out
+  }
+  return null;
 }
 
 function breathingCard(){
@@ -1406,18 +1432,29 @@ function reactionCard(){
   return c;
 }
 
+function noticeCard(){
+  const c = document.createElement('div'); c.className='doom-card ins';
+  c.innerHTML = '<div class="doom-cat">unlock videos</div><div class="doom-title">Add your YouTube key</div><div class="doom-text">To fill this feed with real lecture clips, open ⚙ Settings, paste your YouTube API Key, Save, then reopen this. Until then you get reading cards + games.</div><div class="doom-hint">⚙ → YouTube API Key</div>';
+  return c;
+}
+
+// VIDEO-FIRST feed: mostly clips (mixed topics, deepening), one read in the middle, occasional game
 async function doomMore(){
   if(doomLoading) return; doomLoading = true;
   const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
-  const ins = await doomInsights(5);
-  ins.forEach((o, k) => {
-    feed.insertBefore(insightCard(o), sentinel);
-    if(doomVideos.length && k % 2 === 1){            // a professor clip every couple insights
-      feed.insertBefore(videoCard(doomVideos.shift()), sentinel);
-      if(!doomVideos.length) doomLoadVideos();
-    }
-  });
-  feed.insertBefore((Math.random() < 0.5 ? breathingCard() : reactionCard()), sentinel);  // one game per batch
+  let vids = 0;
+  for(let i=0;i<5;i++){
+    const v = await nextVideo();
+    if(!v) break;
+    feed.insertBefore(videoCard(v), sentinel); vids++;
+    if(i === 2){ const one = await doomInsights(1); if(one[0]) feed.insertBefore(insightCard(one[0]), sentinel); }  // a read in the middle
+  }
+  if(vids === 0){                                   // no key / no results → reading cards so it still works
+    const ins = await doomInsights(5);
+    ins.forEach(o => feed.insertBefore(insightCard(o), sentinel));
+  }
+  if(Math.random() < 0.35) feed.insertBefore((Math.random() < 0.5 ? breathingCard() : reactionCard()), sentinel);
+  doomDepth++; try { localStorage.setItem('jv-doom-depth', String(doomDepth)); } catch(e){}
   doomLoading = false;
 }
 
@@ -1434,11 +1471,10 @@ function renderTopicBar(){
 }
 
 async function setDoomTopic(key){
-  doomTopic = key; renderTopicBar();
+  doomTopic = key; doomRot = 0; renderTopicBar();
   const feed = document.getElementById('doom-feed');
   feed.querySelectorAll('.doom-card').forEach(el => el.remove());
   feed.scrollTop = 0;
-  await doomLoadVideos();
   doomMore();
 }
 
@@ -1447,7 +1483,10 @@ function openDoom(){
   renderTopicBar();
   const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
   if(!doomObs){ doomObs = new IntersectionObserver(es => { if(es[0].isIntersecting) doomMore(); }, {root:feed, threshold:0.05}); doomObs.observe(sentinel); }
-  if(!feed.querySelector('.doom-card')) doomLoadVideos().then(doomMore);
+  if(!feed.querySelector('.doom-card')){
+    if(!cfg.ytKey) feed.insertBefore(noticeCard(), document.getElementById('doom-sentinel'));
+    doomMore();
+  }
 }
 function closeDoom(){ document.getElementById('doom').classList.remove('open'); }
 
