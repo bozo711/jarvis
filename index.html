@@ -884,6 +884,24 @@ strong{color:#e8d4b0}
 .doom-src{margin-top:16px;font-size:12px;color:#c89400;letter-spacing:.3px;max-width:560px}
 .doom-video{width:100%;max-width:600px;aspect-ratio:16/9;border:0;border-radius:12px}
 .doom-vtitle{font-size:15px;color:var(--text);margin-top:13px;max-width:560px;line-height:1.4}
+/* Imprint-style lesson cards + progress */
+.doom-prog{display:flex;align-items:center;gap:6px;padding:9px 16px;background:rgba(0,0,0,.6);border-bottom:1px solid rgba(255,255,255,.07);min-height:16px}
+.doom-prog .seg{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.16)}
+.doom-prog .seg.on{background:#fff}
+.doom-prog .pl{font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,.7);white-space:nowrap;text-transform:uppercase}
+.doom-card.imp{color:#fff;transition:background .4s ease}
+.imp .doom-hint{color:rgba(255,255,255,.65)}
+.imp-icon{font-size:60px;margin-bottom:18px;filter:drop-shadow(0 5px 16px rgba(0,0,0,.4))}
+.imp-kicker{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.82);margin-bottom:16px;font-weight:bold}
+.imp-title{font-size:30px;font-weight:800;line-height:1.18;margin-bottom:18px;max-width:600px;letter-spacing:-.3px;color:#fff}
+.imp-text{font-size:18px;line-height:1.6;max-width:560px;color:rgba(255,255,255,.95)}
+.imp-src{margin-top:20px;font-size:12px;color:rgba(255,255,255,.8);letter-spacing:.3px;max-width:560px;font-style:italic}
+.imp-cover-n{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.78);margin-top:6px}
+.imp-recap{padding:0;margin:4px auto 0;max-width:520px;text-align:left}
+.imp-recap li{font-size:17px;line-height:1.5;margin-bottom:14px;list-style:none;padding-left:26px;position:relative;color:#fff}
+.imp-recap li:before{content:'\2726';position:absolute;left:0;color:rgba(255,255,255,.85)}
+.imp-btn{margin-top:24px;padding:13px 30px;border:1.5px solid rgba(255,255,255,.55);border-radius:30px;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+.imp-done{margin-top:20px;font-size:13px;letter-spacing:2px;color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:30px;padding:10px 24px;display:inline-block}
 /* ── ACADEMY / TEACHER MODE ── */
 #academy{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column}
 #academy.open{display:flex}
@@ -1034,6 +1052,7 @@ strong{color:#e8d4b0}
 <div id="doom">
   <button class="doom-x" onclick="closeDoom()">✕</button>
   <div class="doom-topics" id="doom-topics"></div>
+  <div class="doom-prog" id="doom-prog"></div>
   <div class="doom-feed" id="doom-feed">
     <div id="doom-sentinel" style="height:1px"></div>
   </div>
@@ -1394,34 +1413,75 @@ function doomEsc(s){ return String(s||'').replace(/[&<>]/g, m => ({'&':'&amp;','
 function doomSleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 let doomLoading = false, doomObs = null;
 
-async function doomInsights(n){
-  const t = DOOM_TOPICS.find(x => x.key === doomTopic) || DOOM_TOPICS[0];
+let doomLessonId = 0, doomProgObs = null;
+const DOOM_COLORS = {
+  foryou:['#3b2a7a','#7b3fa0'], mind:['#5b2a8c','#b0277e'], quantum:['#15497a','#1f9bb0'],
+  manifest:['#8c2a6e','#c04a8a'], laws:['#1f6b5e','#2f9b6a'], ancient:['#7a4a16','#b07a2f'],
+  stoic:['#33414f','#5a6b7e'], wealth:['#1f6b3a','#86902f'], eng:['#7a3416','#b0532f'],
+};
+const DOOM_ICONS = { foryou:'🧭', mind:'🧠', quantum:'⚛️', manifest:'✨', laws:'🌀', ancient:'📜', stoic:'🏛️', wealth:'💰', eng:'🛠️' };
+function doomGrad(key){ const c = DOOM_COLORS[key] || DOOM_COLORS.foryou; return 'linear-gradient(160deg,'+c[0]+','+c[1]+')'; }
+
+// build ONE short lesson (cover + ~5 teach cards + recap), grounded in real sources
+async function doomBuildLesson(){
+  const t = doomPickTopic();
   if(!cfg.apikey){
     const a = STARTER_INSIGHTS.slice();
     for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-    return a.slice(0,n);
+    const cards = a.slice(0,4);
+    return { topicKey:t.key, topicLabel:t.label, title:t.label+' — core ideas', cards, recap:cards.map(c=>c.title) };
   }
-  const sys = 'You are a teacher making bite-sized LEARNING cards to help someone grow. Topic focus: '+t.hint+'. Return JSON only: {"insights":[{"category":"","title":"","text":"","source":""}]}. Generate '+n+' cards. title = the concept (3-7 words). text = 3-5 sentences that actually TEACH the idea clearly. source = the REAL non-fiction book + author (or named teacher/lecture) it comes from — real sources only, never invent one. Be factually accurate.';
+  const sys = 'You are building ONE short Imprint-style micro-lesson (swipeable visual cards) on this topic. Topic focus: '+t.hint+'. Return JSON only: {"title":"lesson title (3-6 words)","cards":[{"title":"concept (3-7 words)","text":"2-4 sentences that TEACH it clearly","source":"REAL book + author or named teacher — never invent one"}],"recap":["3-5 word takeaway","..."]}. Exactly 5 cards, 3 recap bullets. Be factually accurate; real sources only.';
   try{
-    const out = await JARVIS_CORE.streamChat({ provider:cfg.provider, apikey:cfg.apikey, url:cfg.url, model:cfg.model, system:sys, messages:[{role:'user',content:'Teach me '+n+' things about: '+t.label}], json:true });
+    const out = await JARVIS_CORE.streamChat({ provider:cfg.provider, apikey:cfg.apikey, url:cfg.url, model:cfg.model, system:sys, messages:[{role:'user',content:'Make a lesson on: '+t.label}], json:true });
     const d = JSON.parse((out.match(/\{[\s\S]*\}/)||[out])[0]);
-    const ins = (d.insights||[]).filter(x=>x&&x.text);
-    return ins.length ? ins : STARTER_INSIGHTS.slice(0,n);
-  }catch(e){ return STARTER_INSIGHTS.slice(0,n); }
+    const cards = (d.cards||[]).filter(x=>x&&x.text);
+    if(!cards.length) throw 0;
+    return { topicKey:t.key, topicLabel:t.label, title:d.title||t.label, cards, recap:(d.recap&&d.recap.length?d.recap:cards.map(c=>c.title)) };
+  }catch(e){
+    const a = STARTER_INSIGHTS.slice(0,4);
+    return { topicKey:t.key, topicLabel:t.label, title:t.label+' — core ideas', cards:a, recap:a.map(c=>c.title) };
+  }
 }
 
-function insightCard(o){
-  const c = document.createElement('div'); c.className='doom-card ins';
-  const src = o.source ? '<div class="doom-src">📖 '+doomEsc(o.source)+'</div>' : '';
-  c.innerHTML = '<div class="doom-cat">'+doomEsc(o.category||'insight')+'</div><div class="doom-title">'+doomEsc(o.title||'')+'</div><div class="doom-text">'+doomEsc(o.text||'')+'</div>'+src+'<div class="doom-hint">▲ swipe up for more</div>';
+function impShell(topicKey){ const c=document.createElement('div'); c.className='doom-card imp'; c.style.background=doomGrad(topicKey); return c; }
+
+function coverCard(L, lid, len){
+  const c = impShell(L.topicKey);
+  c.dataset.lid=lid; c.dataset.idx=1; c.dataset.len=len;
+  const mins = Math.max(1, Math.round(L.cards.length*0.4));
+  c.innerHTML = '<div class="imp-icon">'+(DOOM_ICONS[L.topicKey]||'✦')+'</div><div class="imp-kicker">'+doomEsc(L.topicLabel)+' · lesson</div><div class="imp-title">'+doomEsc(L.title)+'</div><div class="imp-cover-n">'+L.cards.length+' cards · ~'+mins+' min</div><div class="doom-hint">▲ swipe up to begin</div>';
+  return c;
+}
+function teachCard(card, L, lid, idx, len){
+  const c = impShell(L.topicKey);
+  c.dataset.lid=lid; c.dataset.idx=idx; c.dataset.len=len;
+  const src = card.source ? '<div class="imp-src">📖 '+doomEsc(card.source)+'</div>' : '';
+  c.innerHTML = '<div class="imp-kicker">'+doomEsc(L.topicLabel)+'</div><div class="imp-title">'+doomEsc(card.title||'')+'</div><div class="imp-text">'+doomEsc(card.text||'')+'</div>'+src+'<div class="doom-hint">▲ swipe up</div>';
+  return c;
+}
+function recapCard(L, lid, len){
+  const c = impShell(L.topicKey);
+  c.dataset.lid=lid; c.dataset.idx=len; c.dataset.len=len;
+  const items = (L.recap||[]).map(r=>'<li>'+doomEsc(r)+'</li>').join('');
+  c.innerHTML = '<div class="imp-kicker">Recap</div><div class="imp-title">'+doomEsc(L.title)+'</div><ul class="imp-recap">'+items+'</ul><div class="imp-done">Lesson complete ✓</div><div class="doom-hint">▲ swipe up for the next lesson</div>';
   return c;
 }
 
+// progress bar reflects where you are in the current lesson
+function doomUpdateProg(card){
+  const bar = document.getElementById('doom-prog'); if(!bar) return;
+  if(!card || !card.dataset || !card.dataset.len){ bar.innerHTML = '<div class="pl">break</div>'; return; }
+  const idx = +card.dataset.idx, len = +card.dataset.len;
+  let segs=''; for(let i=1;i<=len;i++) segs += '<div class="seg'+(i<=idx?' on':'')+'"></div>';
+  bar.innerHTML = segs + '<div class="pl">'+idx+' / '+len+'</div>';
+}
+
 function videoCard(v){
-  const c = document.createElement('div'); c.className='doom-card game';
-  c.innerHTML = '<div class="doom-cat" style="color:#c0506a">▶ '+(v.topic?doomEsc(v.topic)+' · ':'')+doomEsc(v.channel||'clip')+'</div>'
+  const c = document.createElement('div'); c.className='doom-card imp'; c.style.background=doomGrad(v.topicKey||'foryou');
+  c.innerHTML = '<div class="imp-kicker">▶ Watch · '+(v.topic?doomEsc(v.topic)+' · ':'')+doomEsc(v.channel||'clip')+'</div>'
     + '<iframe class="doom-video" src="https://www.youtube.com/embed/'+encodeURIComponent(v.id)+'?rel=0&modestbranding=1" allow="encrypted-media;picture-in-picture" allowfullscreen loading="lazy"></iframe>'
-    + '<div class="doom-vtitle">'+doomEsc(v.title||'')+'</div><div class="doom-hint">▲ swipe up for more</div>';
+    + '<div class="imp-text" style="font-size:15px;margin-top:13px">'+doomEsc(v.title||'')+'</div><div class="doom-hint">▲ swipe up</div>';
   return c;
 }
 
@@ -1448,7 +1508,7 @@ async function nextVideo(){
     }
     while(doomCache[key].length){
       const v = doomCache[key].shift();
-      if(v && v.id && !doomShown.has(v.id)){ doomShown.add(v.id); v.topic = t.label; return v; }
+      if(v && v.id && !doomShown.has(v.id)){ doomShown.add(v.id); v.topic = t.label; v.topicKey = t.key; return v; }
     }
     if(doomTopic !== 'foryou') break;   // a single chosen lane can run out
   }
@@ -1456,9 +1516,9 @@ async function nextVideo(){
 }
 
 function breathingCard(){
-  const c = document.createElement('div'); c.className='doom-card game';
-  c.innerHTML = '<div class="doom-cat" style="color:#c0506a">Reset</div><div class="doom-title">4-7-8 Breathing</div><div class="breath-circle">tap start</div><button class="doom-game-btn">START</button><div class="doom-hint">calms your nervous system in a minute</div>';
-  const circle = c.querySelector('.breath-circle'), btn = c.querySelector('.doom-game-btn');
+  const c = document.createElement('div'); c.className='doom-card imp'; c.style.background='linear-gradient(160deg,#243a52,#3c5f7a)';
+  c.innerHTML = '<div class="imp-kicker">Break · Reset</div><div class="imp-title">4-7-8 Breathing</div><div class="breath-circle">tap start</div><button class="imp-btn">START</button><div class="doom-hint">calms your nervous system in a minute</div>';
+  const circle = c.querySelector('.breath-circle'), btn = c.querySelector('.imp-btn');
   btn.onclick = async () => {
     btn.disabled = true; btn.style.opacity = '.5';
     for(let i=0;i<3;i++){
@@ -1472,8 +1532,8 @@ function breathingCard(){
 }
 
 function reactionCard(){
-  const c = document.createElement('div'); c.className='doom-card game';
-  c.innerHTML = '<div class="doom-cat" style="color:#c0506a">Sharpen</div><div class="doom-title">Reaction Test</div><div class="react-box">tap to start</div><div class="doom-hint">tap the box the instant it turns green</div>';
+  const c = document.createElement('div'); c.className='doom-card imp'; c.style.background='linear-gradient(160deg,#243a52,#3c5f7a)';
+  c.innerHTML = '<div class="imp-kicker">Break · Sharpen</div><div class="imp-title">Reaction Test</div><div class="react-box">tap to start</div><div class="doom-hint">tap the box the instant it turns green</div>';
   const box = c.querySelector('.react-box'); let state='idle', t0=0, timer=null;
   box.onclick = () => {
     if(state==='idle'){ state='wait'; box.textContent='wait for green…'; box.classList.remove('go'); timer=setTimeout(()=>{ state='go'; box.classList.add('go'); box.textContent='TAP!'; t0=performance.now(); }, 1200+Math.random()*2600); }
@@ -1483,28 +1543,31 @@ function reactionCard(){
   return c;
 }
 
-function noticeCard(){
-  const c = document.createElement('div'); c.className='doom-card ins';
-  c.innerHTML = '<div class="doom-cat">unlock videos</div><div class="doom-title">Add your YouTube key</div><div class="doom-text">To fill this feed with real lecture clips, open ⚙ Settings, paste your YouTube API Key, Save, then reopen this. Until then you get reading cards + games.</div><div class="doom-hint">⚙ → YouTube API Key</div>';
-  return c;
+// build the next Imprint-style lesson and append its cards (cover → teach → recap)
+async function appendLesson(){
+  const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
+  const L = await doomBuildLesson();
+  const len = L.cards.length + 2;            // cover + cards + recap
+  const lid = ++doomLessonId;
+  const nodes = [ coverCard(L, lid, len) ];
+  L.cards.forEach((card, i) => nodes.push(teachCard(card, L, lid, i + 2, len)));
+  nodes.push(recapCard(L, lid, len));
+  nodes.forEach(n => { feed.insertBefore(n, sentinel); if(doomProgObs) doomProgObs.observe(n); });
 }
 
-// VIDEO-FIRST feed: mostly clips (mixed topics, deepening), one read in the middle, occasional game
+// a breather between lessons: a relevant clip if a YT key is set, else a quick game
+async function appendBreak(){
+  const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
+  let node = null;
+  if(cfg.ytKey && Math.random() < 0.6){ const v = await nextVideo(); if(v) node = videoCard(v); }
+  if(!node) node = (Math.random() < 0.5 ? breathingCard() : reactionCard());
+  feed.insertBefore(node, sentinel); if(doomProgObs) doomProgObs.observe(node);
+}
+
 async function doomMore(){
   if(doomLoading) return; doomLoading = true;
-  const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
-  let vids = 0;
-  for(let i=0;i<5;i++){
-    const v = await nextVideo();
-    if(!v) break;
-    feed.insertBefore(videoCard(v), sentinel); vids++;
-    if(i === 2){ const one = await doomInsights(1); if(one[0]) feed.insertBefore(insightCard(one[0]), sentinel); }  // a read in the middle
-  }
-  if(vids === 0){                                   // no key / no results → reading cards so it still works
-    const ins = await doomInsights(5);
-    ins.forEach(o => feed.insertBefore(insightCard(o), sentinel));
-  }
-  if(Math.random() < 0.35) feed.insertBefore((Math.random() < 0.5 ? breathingCard() : reactionCard()), sentinel);
+  await appendLesson();
+  if(Math.random() < 0.55) await appendBreak();   // occasional break between lessons, like Imprint
   doomDepth++; try { localStorage.setItem('jv-doom-depth', String(doomDepth)); } catch(e){}
   doomLoading = false;
 }
@@ -1525,7 +1588,7 @@ async function setDoomTopic(key){
   doomTopic = key; doomRot = 0; renderTopicBar();
   const feed = document.getElementById('doom-feed');
   feed.querySelectorAll('.doom-card').forEach(el => el.remove());
-  feed.scrollTop = 0;
+  feed.scrollTop = 0; doomUpdateProg(null);
   doomMore();
 }
 
@@ -1534,10 +1597,8 @@ function openDoom(){
   renderTopicBar();
   const feed = document.getElementById('doom-feed'), sentinel = document.getElementById('doom-sentinel');
   if(!doomObs){ doomObs = new IntersectionObserver(es => { if(es[0].isIntersecting) doomMore(); }, {root:feed, threshold:0.05}); doomObs.observe(sentinel); }
-  if(!feed.querySelector('.doom-card')){
-    if(!cfg.ytKey) feed.insertBefore(noticeCard(), document.getElementById('doom-sentinel'));
-    doomMore();
-  }
+  if(!doomProgObs){ doomProgObs = new IntersectionObserver(es => { es.forEach(e => { if(e.isIntersecting) doomUpdateProg(e.target); }); }, {root:feed, threshold:0.55}); }
+  if(!feed.querySelector('.doom-card')){ doomUpdateProg(null); doomMore(); }
 }
 function closeDoom(){ document.getElementById('doom').classList.remove('open'); }
 
