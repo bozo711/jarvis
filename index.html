@@ -6157,41 +6157,57 @@ bootSecure();
 
 <!-- ═══ 3D INTERFACE · Three.js + HDRI/PBR (realistic) ═══ -->
 <script type="module">
-let inited=false, running=false, renderer, scene, camera, controls, raf, clock, busy=false, sectionModels={}, sectionAreas={}, current='chat', camPos=null, camTgt=null, connGroup=null;
+let inited=false, running=false, renderer, scene, camera, controls, raf, clock, busy=false, sectionModels={}, sectionAreas={}, current='chat', camPos=null, camTgt=null, connGroup=null, composer=null;
 function connectAreas(THREE){
   const grp=new THREE.Group(); const pulses=[];
-  const core=new THREE.Vector3(...sectionAreas.chat);
-  const tubeMat=new THREE.MeshBasicMaterial({color:0xff3358, transparent:true, opacity:0.32, depthWrite:false});
+  const keys=['chat','brain','security','academy','settings'];
+  const coreMat=new THREE.MeshBasicMaterial({color:0xff3358, transparent:true, opacity:0.45, depthWrite:false});  // spokes from core (brighter)
+  const meshMat=new THREE.MeshBasicMaterial({color:0x9a6bff, transparent:true, opacity:0.22, depthWrite:false});  // cross-links (subtler)
   const pulseMat=new THREE.MeshBasicMaterial({color:0xffd8b0});
-  ['brain','security','academy','settings'].forEach(k=>{
-    const p=new THREE.Vector3(...sectionAreas[k]);
-    const mid=core.clone().add(p).multiplyScalar(0.5); mid.y+=4.0;        // arc the conduit upward
-    const curve=new THREE.QuadraticBezierCurve3(core.clone(), mid, p.clone());
-    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve,48,0.05,10,false), tubeMat));
-    for(let i=0;i<4;i++){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10), pulseMat); grp.add(m); pulses.push({m,curve,t:i/4}); }
-  });
+  for(let i=0;i<keys.length;i++) for(let j=i+1;j<keys.length;j++){
+    const a=new THREE.Vector3(...sectionAreas[keys[i]]), b=new THREE.Vector3(...sectionAreas[keys[j]]);
+    const isCore=(keys[i]==='chat'||keys[j]==='chat');
+    const mid=a.clone().add(b).multiplyScalar(0.5); mid.y += isCore?4.0:2.5;   // arc upward
+    const curve=new THREE.QuadraticBezierCurve3(a, mid, b);
+    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve,48,isCore?0.05:0.035,8,false), isCore?coreMat:meshMat));
+    const np=isCore?4:2;
+    for(let k=0;k<np;k++){ const m=new THREE.Mesh(new THREE.SphereGeometry(isCore?0.1:0.07,10,10), pulseMat); grp.add(m); pulses.push({m,curve,t:k/np}); }
+  }
   grp.userData={pulses};
   return grp;
 }
 const SECTION_TITLE = { chat:'CORE', brain:'NEUROLINK', security:'SECURITY', academy:'ACADEMY', settings:'CONFIG' };
 function setCamGoal(key){ const a=sectionAreas[key]||[0,0.4,0]; if(camPos){ camPos.set(a[0], a[1]+1.5, a[2]+6.5); camTgt.set(a[0], a[1], a[2]); } }
+function makeLabel(THREE, text){
+  const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d');
+  x.font='bold 28px "Courier New",monospace'; x.fillStyle='#ffe2e8'; x.textAlign='center'; x.textBaseline='middle';
+  x.shadowColor='rgba(0,0,0,.8)'; x.shadowBlur=6; x.fillText(text, 128, 34);
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, depthWrite:false, depthTest:false}));
+  s.scale.set(1.5,0.38,1); return s;
+}
+// the brain IS the live subsystem map: each node = a REAL JARVIS subsystem, coloured by live status
 function buildBrainNet(THREE){
-  const g=new THREE.Group(), nodes=[], N=24;
-  const mRed =new THREE.MeshStandardMaterial({color:0x220008, emissive:0xff3358, emissiveIntensity:4, roughness:0.4});
-  const mCyan=new THREE.MeshStandardMaterial({color:0x001a22, emissive:0x35d0ff, emissiveIntensity:4, roughness:0.4});
+  const subs=(window.JV&&window.JV.subsys)?window.JV.subsys:[];
+  const g=new THREE.Group(), nodes=[], N=subs.length||12;
+  const mLive=new THREE.MeshStandardMaterial({color:0x002018, emissive:0x35ffae, emissiveIntensity:5, roughness:0.4});
+  const mPlan=new THREE.MeshStandardMaterial({color:0x201006, emissive:0xffae35, emissiveIntensity:3, roughness:0.4});
+  // deterministic spread in a brain-shaped volume (stable layout, not random each load)
   for(let i=0;i<N;i++){
-    const v=new THREE.Vector3((Math.random()*2-1)*1.7,(Math.random()*2-1)*1.15,(Math.random()*2-1)*1.3);
-    const s=new THREE.Mesh(new THREE.SphereGeometry(0.075,16,16), i%4===0?mCyan:mRed); s.position.copy(v); g.add(s); nodes.push(v);
+    const a=i*2.399963, r=0.55+((i*0.618)%1)*0.55, y=((i/(N-1))*2-1)*1.05;
+    const v=new THREE.Vector3(Math.cos(a)*r*1.7, y, Math.sin(a)*r*1.3);
+    const live=(subs[i]?subs[i][1]:'LIVE')==='LIVE';
+    const s=new THREE.Mesh(new THREE.SphereGeometry(0.09,18,18), live?mLive:mPlan); s.position.copy(v); g.add(s); nodes.push(v);
+    if(subs[i]){ const lab=makeLabel(THREE, String(subs[i][0]).split('·')[0].trim()); lab.position.copy(v).add(new THREE.Vector3(0,0.2,0)); g.add(lab); }
   }
   const segs=[], conns=[];
   for(let i=0;i<N;i++){
     nodes.map((p,j)=>({j,d:nodes[i].distanceTo(p)})).filter(o=>o.j!==i).sort((a,b)=>a.d-b.d).slice(0,3)
       .forEach(o=>{ if(o.j>i){ segs.push(nodes[i],nodes[o.j]); conns.push([nodes[i],nodes[o.j]]); } });
   }
-  const lg=new THREE.BufferGeometry().setFromPoints(segs);
-  g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({color:0xff5577, transparent:true, opacity:0.4})));
+  g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segs), new THREE.LineBasicMaterial({color:0x66ffcc, transparent:true, opacity:0.4})));
   const pulses=[], pm=new THREE.MeshBasicMaterial({color:0xffffff});
-  for(let i=0;i<12;i++){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.055,8,8),pm); g.add(m); pulses.push({m, c:conns[(Math.random()*conns.length)|0], t:Math.random()}); }
+  for(let i=0;i<Math.min(14,conns.length);i++){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),pm); g.add(m); pulses.push({m, c:conns[(Math.random()*conns.length)|0], t:Math.random()}); }
   g.userData={pulses, conns};
   return g;
 }
@@ -6270,6 +6286,15 @@ async function build(THREE, OrbitControls, RGBELoader){
   controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=0.08;
   controls.minDistance=3.5; controls.maxDistance=12; controls.target.set(0,0.2,0); controls.autoRotate=false;
   clock=new THREE.Clock();
+  // ── bloom post-processing (real glow on emissive cores/conduits) ──
+  const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
+  const { RenderPass }     = await import('three/addons/postprocessing/RenderPass.js');
+  const { UnrealBloomPass }= await import('three/addons/postprocessing/UnrealBloomPass.js');
+  const { OutputPass }     = await import('three/addons/postprocessing/OutputPass.js');
+  composer=new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene,camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.45, 0.35, 0.92));   // strength, radius, threshold — only the brightest points glow
+  composer.addPass(new OutputPass());
 
   // ── HDRI image-based lighting (the realism) ──
   const pmrem=new THREE.PMREMGenerator(renderer); pmrem.compileEquirectangularShader();
@@ -6291,8 +6316,7 @@ async function build(THREE, OrbitControls, RGBELoader){
     load('./vendor/models/vault.glb'), load('./vendor/models/academy.glb'), load('./vendor/models/gears.glb'),
   ]);
   // one big dark ground spanning all the areas
-  const ground=new THREE.Mesh(new THREE.CircleGeometry(60,72), new THREE.MeshStandardMaterial({color:0x060309, metalness:0.6, roughness:0.5}));
-  ground.rotation.x=-Math.PI/2; ground.position.y=-2.4; scene.add(ground);
+  // (no ground — sections float free in space, lit by the HDRI)
 
   rmesh.scale.setScalar(1.2); rmesh.rotation.x=Math.PI*0.18;
   vault.scale.setScalar(1.25); acad.scale.setScalar(1.25); gears.scale.setScalar(1.2);
@@ -6320,7 +6344,7 @@ async function build(THREE, OrbitControls, RGBELoader){
   b3dMsg('a', (window.JV.cfg.apiUrl ? 'Server vault online — keys stay on the backend. ' : '') + 'Systems online. Use the nav to fly between areas. Speak, '+(window.JV.cfg.name||'Commander')+'.');
 }
 
-function onResize(){ if(!renderer) return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+function onResize(){ if(!renderer) return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); if(composer) composer.setSize(innerWidth,innerHeight); }
 function loop(){
   if(!running) return;
   raf=requestAnimationFrame(loop);
@@ -6336,7 +6360,7 @@ function loop(){
   if(bn && bn.userData.pulses){ bn.userData.pulses.forEach(p=>{ p.t+=0.02; if(p.t>=1){ p.t=0; p.c=bn.userData.conns[(Math.random()*bn.userData.conns.length)|0]; } if(p.c) p.m.position.lerpVectors(p.c[0],p.c[1],p.t); }); }
   if(connGroup){ connGroup.userData.pulses.forEach(p=>{ p.t+=0.006; if(p.t>1) p.t=0; p.curve.getPoint(p.t, p.m.position); }); }   // energy flowing between areas
   if(window._b3dFrame) window._b3dFrame.rotation.z -= 0.0025;
-  controls.update(); renderer.render(scene,camera);
+  controls.update(); if(composer) composer.render(); else renderer.render(scene,camera);
 }
 
 function b3dMsg(role,text){ const c=document.getElementById('b3d-msgs'); const d=document.createElement('div'); d.className='b3d-m '+(role==='u'?'u':'a'); d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight; return d; }
