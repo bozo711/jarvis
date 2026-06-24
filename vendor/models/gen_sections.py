@@ -32,7 +32,14 @@ def smooth_all():
         if o.type == 'MESH':
             for p in o.data.polygons: p.use_smooth = True
 
+def bevel_all():
+    for o in bpy.data.objects:
+        if o.type == 'MESH':
+            m = o.modifiers.new('bev', 'BEVEL'); m.width = 0.012; m.segments = 2
+            m.limit_method = 'ANGLE'; m.angle_limit = math.radians(35)
+
 def export(name):
+    bevel_all()
     smooth_all()
     out = os.path.join(DIR, name)
     bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_apply=True, export_yup=True)

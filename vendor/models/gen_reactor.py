@@ -68,9 +68,11 @@ bpy.ops.mesh.primitive_uv_sphere_add(radius=0.6, segments=48, ring_count=32)
 dome = bpy.context.active_object; add(dome, GLASS)
 bpy.ops.object.shade_smooth()
 
-# smooth-shade the rings/housing too
+# bevel sharp edges (catches light → realistic) + smooth shading
 for o in bpy.data.objects:
     if o.type == 'MESH':
+        bm = o.modifiers.new('bev', 'BEVEL'); bm.width = 0.012; bm.segments = 2
+        bm.limit_method = 'ANGLE'; bm.angle_limit = math.radians(35)
         for p in o.data.polygons:
             p.use_smooth = True
 
