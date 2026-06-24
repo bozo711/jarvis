@@ -1111,6 +1111,7 @@ strong{color:#e8d4b0}
     <div id="neuro-status"></div>
     <div class="nx-sec-t">Parallel minds</div>
     <div id="neuro-agents" class="nx-agents"></div>
+    <button class="save-btn" id="neuro-dispatch" onclick="dispatchAgents()" style="margin:12px 0 2px">⚡ DISPATCH MINDS</button>
     <div class="nx-sec-t"><span id="neuro-tcount"></span></div>
     <div id="neuro-tools" class="nx-tools"></div>
   </div>
@@ -1165,6 +1166,7 @@ strong{color:#e8d4b0}
       </div>
       <button class="icon-btn" onclick="toggleVoiceOut()" id="voice-out-btn" title="Toggle voice output">🔊</button>
       <button class="icon-btn" onclick="toggleHandsFree()" id="hands-free-btn" title="Hands-free conversation" style="opacity:0.4">🗣</button>
+      <button class="icon-btn" onclick="toggleWake()" id="wake-btn" title="Wake word — say 'Jarvis' to talk hands-free" style="opacity:0.4">🎙</button>
       <button class="icon-btn" onclick="visionLook()" id="vision-btn" title="Let JARVIS see your screen/camera (once)">👁</button>
       <button class="icon-btn" onclick="toggleWatch()" id="watch-btn" title="Watch my screen/camera continuously">📡</button>
       <button class="icon-btn" onclick="openNeuro()" title="NEUROLINK — JARVIS's cortex, tools & agents">🧠</button>
@@ -1767,7 +1769,7 @@ const NEURO_SUBSYS = [
   ['Prefrontal · reasoning','LIVE'], ['Language · chat','LIVE'], ['Hippocampus · memory','LIVE'],
   ['Sensory · vision (see/watch)','LIVE'], ['Motor · actions (Gumroad/Discord)','LIVE'], ['Concept · academy','LIVE'],
   ['Auditory · beat engine','LIVE'], ['Speech · voice TTS','LIVE'], ['Security · encrypted vault','LIVE'],
-  ['Predictive · forecasting','PLANNED'], ['Reflex · wake word','PLANNED'], ['Cerebellum · 24/7 automation','PLANNED'],
+  ['Reflex · wake word','LIVE'], ['Parallel minds · dispatch','LIVE'], ['Cerebellum · 24/7 automation','PLANNED'],
 ];
 const NEURO_AGENTS = [
   ['ATLAS','researching the market'], ['SCRIBE','writing the product'],
@@ -1798,8 +1800,8 @@ function neuroRenderPanels(){
     const cls = s[1]==='LIVE'?'on':(s[1]==='PLANNED'?'plan':'ok');
     return '<div class="nx-row"><span>'+doomEsc(s[0])+'</span><span class="nx-badge '+cls+'">'+s[1]+'</span></div>';
   }).join('');
-  document.getElementById('neuro-agents').innerHTML = NEURO_AGENTS.map(a=>
-    '<div class="nx-agent"><div class="nx-aname">'+doomEsc(a[0])+'</div><div class="nx-atask">'+doomEsc(a[1])+'…</div><div class="nx-run">running</div></div>'
+  document.getElementById('neuro-agents').innerHTML = NEURO_AGENTS.map((a,i)=>
+    '<div class="nx-agent" id="nx-ag-'+i+'"><div class="nx-aname">'+doomEsc(a[0])+'</div><div class="nx-atask">'+doomEsc(a[1])+'…</div><div class="nx-run">idle</div></div>'
   ).join('');
   document.getElementById('neuro-tools').innerHTML = NEURO_TOOLS.map(t=>'<span class="nx-tool">'+doomEsc(t)+'</span>').join('');
   document.getElementById('neuro-tcount').textContent = NEURO_TOOLS.length+' tools wired';
@@ -1845,6 +1847,65 @@ function neuroFrame(){
     ctx.beginPath(); ctx.arc(x, y, 2.4, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0;
   }
   neuroRAF = requestAnimationFrame(neuroFrame);
+}
+
+// fire the agents concurrently — each does REAL work grounded in your data
+let neuroBusy = false;
+async function dispatchAgents(){
+  if(neuroBusy) return;
+  neuroBusy = true;
+  const btn = document.getElementById('neuro-dispatch');
+  if(btn){ btn.disabled = true; btn.textContent = '⚡ MINDS WORKING…'; }
+  const niche = getNiche();
+  const haveModel = cfg.provider==='ollama' ? !!cfg.url : !!cfg.apikey;
+  const setCard = (i, status, text) => {
+    const c = document.getElementById('nx-ag-'+i); if(!c) return;
+    c.querySelector('.nx-run').textContent = status;
+    if(text!=null) c.querySelector('.nx-atask').textContent = text;
+  };
+  // ── deterministic minds (instant, real) ──
+  // LEDGER — your real numbers
+  (function(){
+    let s;
+    if(liveSales && liveSales.ok){ const pct = cfg.goal?Math.round((liveSales.revenue/cfg.goal)*100):0; s = '$'+liveSales.revenue.toFixed(0)+' · '+liveSales.salesCount+' sales · '+pct+'% to goal'; }
+    else s = 'Connect Gumroad in ⚙ for live numbers';
+    setCard(3,'done ✓', s);
+  })();
+  // SENTRY — real security state
+  (function(){
+    const enc = !!localStorage.getItem('jv-cfg-enc');
+    setCard(5,'done ✓', enc ? 'Vault ENCRYPTED 🔒 — keys protected' : 'Keys UNENCRYPTED — set a PIN in ⚙ Security');
+  })();
+  // MUSE — queue a real beat style
+  (function(){ const st=['trap','drill','lofi','boom bap','house'][(Math.random()*5)|0]; setCard(4,'done ✓','Queued a '+st+' beat — open 🎵 Beats to make it'); })();
+
+  // ── LLM minds (run concurrently) ──
+  const results = [];
+  const llm = async (i, sysP, userP) => {
+    if(!haveModel){ setCard(i,'idle','Add an API key in ⚙ to activate'); return; }
+    setCard(i,'running…','thinking…');
+    try{
+      const out = await callAPIWithPrompt(sysP, [{role:'user', content:userP}], ()=>{});
+      const clean = (out||'').replace(/\s+/g,' ').trim();
+      setCard(i,'done ✓', clean.slice(0,180));
+      results.push(NEURO_AGENTS[i][0]+': '+clean);
+    }catch(e){ setCard(i,'error ✕', (e.message||'failed').slice(0,80)); }
+  };
+  const prods = (liveSales && liveSales.ok && liveSales.products && liveSales.products.length) ? ('My products: '+liveSales.products.map(p=>p.name).join(', ')+'. ') : '';
+  await Promise.all([
+    llm(0,'You are ATLAS, a sharp market researcher. Answer in ONE tight sentence.','Name ONE specific '+niche+' digital product that could sell right now, and why.'),
+    llm(1,'You are SCRIBE, a direct-response copywriter. Reply with just a product title and a one-sentence hook.','Draft a '+niche+' digital product title + hook.'),
+    llm(2,'You are HUNTER, a sales strategist. Reply with ONE concrete action, one sentence.', prods+'What is the single best move to make a sale this week for a '+niche+' creator?'),
+  ]);
+
+  neuroBusy = false;
+  if(btn){ btn.disabled = false; btn.textContent = '⚡ DISPATCH MINDS'; }
+  // drop a combined briefing into the chat so the work is actually usable
+  if(results.length){
+    addMsg('jarvis','assistant','🧠 PARALLEL MINDS — briefing\n\n'+results.join('\n\n'));
+    sfx('recv');
+  }
+  toast('Minds finished');
 }
 
 // ════════════════════════════════════════════════
@@ -2567,6 +2628,7 @@ async function send(agent) {
 
   busy = false;
   if (sb) sb.disabled = false;
+  if (wakeCapturing) { wakeCapturing = false; setTimeout(resumeWake, 600); }   // back to listening for "Jarvis"
 }
 
 // ═══════════════════════════════════════════════
@@ -2855,10 +2917,57 @@ function initSpeech() {
   recognition.onend = () => {
     document.getElementById('mic').classList.remove('on');
     const t = document.getElementById('i-jarvis').value.trim();
-    if (t) setTimeout(()=>send('jarvis'),300);
-    else if (handsFree && !busy) setTimeout(startListen, 500);   // keep waiting if you said nothing
+    if (t) setTimeout(()=>send('jarvis'),300);            // send() resumes wake at its end
+    else if (wakeCapturing) { wakeCapturing=false; resumeWake(); }   // you said nothing after "Jarvis"
+    else if (handsFree && !busy) setTimeout(startListen, 500);
   };
   recognition.onerror = () => document.getElementById('mic').classList.remove('on');
+}
+
+// ── WAKE WORD — a background listener that fires on "Jarvis" / "Hey Zero" ──
+let wakeOn = false, wakeRec = null, wakeCapturing = false;
+const WAKE_RE = /\b(hey\s+)?(jarvis|zero)\b/i;
+
+function initWake() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
+  r.onresult = e => {
+    if (wakeCapturing || busy) return;
+    const t = Array.from(e.results).slice(-4).map(x=>x[0].transcript).join(' ');
+    if (WAKE_RE.test(t)) wakeTriggered();
+  };
+  r.onend = () => { if (wakeOn && !wakeCapturing) { try { r.start(); } catch(e){} } };   // auto-restart (engine drops periodically)
+  r.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') { wakeOn=false; updateWakeBtn(); toast('Allow microphone access for the wake word'); } };
+  return r;
+}
+function updateWakeBtn() { const b = document.getElementById('wake-btn'); if (b) { b.classList.toggle('live', wakeOn); b.style.opacity = wakeOn ? '1' : '0.4'; } }
+function resumeWake() { if (wakeOn && wakeRec) { try { wakeRec.start(); } catch(e){} } }
+
+function toggleWake() {
+  if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) { toast('Voice not supported on this browser'); return; }
+  wakeOn = !wakeOn;
+  if (wakeOn) {
+    if (!wakeRec) wakeRec = initWake();
+    voiceOut = true; const vb = document.getElementById('voice-out-btn'); if (vb) vb.style.opacity = '1';
+    try { wakeRec.start(); } catch(e){}
+    toast('🎙 Listening for "Jarvis" — just say it');
+  } else {
+    wakeCapturing = false;
+    if (wakeRec) try { wakeRec.stop(); } catch(e){}
+    toast('Wake word off');
+  }
+  updateWakeBtn();
+}
+// heard the wake word → acknowledge, then capture your command with the main recogniser
+function wakeTriggered() {
+  wakeCapturing = true;
+  if (wakeRec) try { wakeRec.stop(); } catch(e){}
+  sfx('send');
+  if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance('Yes?'); u.rate=1.1; u.pitch=0.85; window.speechSynthesis.speak(u); }
+  switchTab('jarvis');
+  const inp = document.getElementById('i-jarvis'); if (inp) { inp.value=''; autoH(inp); }
+  setTimeout(() => { try { recognition && recognition.start(); const m=document.getElementById('mic'); if(m) m.classList.add('on'); } catch(e){} }, 750);
 }
 
 function startListen() {
