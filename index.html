@@ -12,6 +12,9 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <link rel="manifest" href="manifest.json">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+</script>
 <title>J.A.R.V.I.S.</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
@@ -966,6 +969,20 @@ strong{color:#e8d4b0}
 #b3d-canvas{width:100%;height:100%;display:block;outline:none;touch-action:none}
 .b3d-x{position:absolute;top:14px;right:18px;z-index:6;background:rgba(0,0,0,.45);border:1px solid var(--red-b);color:#fff;font-size:19px;width:38px;height:38px;border-radius:50%;cursor:pointer}
 #b3d-loading{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#04030a;z-index:5}
+#b3d-hud{position:absolute;inset:0;pointer-events:none;z-index:3}
+#b3d-nav{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:auto}
+#b3d-nav button{width:46px;height:46px;border-radius:50%;border:1px solid rgba(204,34,68,.4);background:rgba(10,0,16,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-size:18px;cursor:pointer;transition:.15s}
+#b3d-nav button:hover{border-color:var(--live);box-shadow:0 0 14px rgba(204,34,68,.5);background:rgba(40,0,20,.6)}
+#b3d-chat{position:absolute;left:18px;bottom:18px;width:min(420px,44vw);pointer-events:auto}
+#b3d-msgs{max-height:42vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;scrollbar-width:none}
+#b3d-msgs::-webkit-scrollbar{display:none}
+.b3d-m{padding:9px 12px;border-radius:11px;font-size:14px;line-height:1.5;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);max-width:92%;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.b3d-m.u{align-self:flex-end;background:rgba(110,84,0,.28);border:1px solid rgba(184,134,11,.4);color:#f0d98a}
+.b3d-m.a{align-self:flex-start;background:rgba(40,0,16,.42);border:1px solid rgba(204,34,68,.4);color:#ffd0d8}
+#b3d-inbar{display:flex;gap:8px}
+#b3d-inp{flex:1;background:rgba(10,0,16,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(204,34,68,.45);border-radius:11px;color:#fff;font-family:inherit;font-size:15px;padding:12px 14px;outline:none}
+#b3d-inp:focus{border-color:var(--live);box-shadow:0 0 16px rgba(204,34,68,.35)}
+#b3d-send{width:50px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--red),#6b0000);color:#fff;font-size:18px;cursor:pointer}
 /* ── DESKTOP: full-screen layout (no phone column) ── */
 @media (min-width:900px){
   html,body{font-size:15px}
@@ -1153,11 +1170,24 @@ strong{color:#e8d4b0}
   </div>
 </div>
 
-<!-- 3D INTERFACE (Babylon.js) — holographic stage -->
+<!-- 3D INTERFACE (Three.js · HDRI/PBR) — realistic holographic stage -->
 <div id="stage3d">
   <canvas id="b3d-canvas" touch-action="none"></canvas>
   <button class="b3d-x" onclick="exit3D()">✕</button>
-  <div id="b3d-loading"><div class="boot-ring"></div><div style="color:#fff;letter-spacing:3px;margin-top:16px;font-size:12px">BOOTING 3D CORE…</div></div>
+  <div id="b3d-loading"><div class="boot-ring"></div><div style="color:#fff;letter-spacing:3px;margin-top:16px;font-size:12px">RENDERING CORE…</div></div>
+  <div id="b3d-hud">
+    <div id="b3d-nav">
+      <button onclick="nav3D(openNeuro)" title="Brain">🧠</button>
+      <button onclick="nav3D(openAcademy)" title="Academy">🎓</button>
+      <button onclick="nav3D(openDoom)" title="Feed">🌀</button>
+      <button onclick="nav3D(openSecCenter)" title="Security">🛡</button>
+      <button onclick="nav3D(openCfg)" title="Settings">⚙</button>
+    </div>
+    <div id="b3d-chat">
+      <div id="b3d-msgs"></div>
+      <div id="b3d-inbar"><input id="b3d-inp" placeholder="Speak to JARVIS…" autocomplete="off" autocorrect="off" spellcheck="false"><button id="b3d-send" onclick="b3dSend()">➤</button></div>
+    </div>
+  </div>
 </div>
 
 <!-- SECURITY CENTER — the 20-layer defense audit + controls -->
@@ -2120,128 +2150,8 @@ async function dispatchAgents(){
   toast('Minds finished');
 }
 
-// ════════════════════════════════════════════════
-// 3D INTERFACE (Babylon.js) — Pass 1: holographic stage + 3D chat + nav ring
-// ════════════════════════════════════════════════
-let b3dReady=false, b3dEngine=null, b3dScene=null, b3dBusy=false, b3dStack=null, b3dSV=null;
-function load3DLibs(){
-  return new Promise((resolve,reject)=>{
-    if(window.BABYLON && window.BABYLON.GUI) return resolve();
-    const s1=document.createElement('script'); s1.src='babylon.js';
-    s1.onload=()=>{ const s2=document.createElement('script'); s2.src='babylon.gui.min.js'; s2.onload=()=>resolve(); s2.onerror=reject; document.head.appendChild(s2); };
-    s1.onerror=reject; document.head.appendChild(s1);
-  });
-}
-function webglOK(){ try{ const c=document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl')||c.getContext('experimental-webgl'))); }catch(e){ return false; } }
-async function enter3D(){
-  if(!webglOK()){ toast('This device/browser has no WebGL — 3D mode needs it (try Chrome on desktop)'); return; }
-  document.getElementById('stage3d').classList.add('open');
-  if(b3dReady){ if(b3dEngine) b3dEngine.resize(); return; }
-  const ld=document.getElementById('b3d-loading'); if(ld) ld.style.display='flex';
-  try{ await load3DLibs(); build3DScene(); b3dReady=true; }
-  catch(e){ toast('3D failed: '+e.message); document.getElementById('stage3d').classList.remove('open'); }
-  if(ld) ld.style.display='none';
-}
-function exit3D(){ document.getElementById('stage3d').classList.remove('open'); }
-function nav3D(fn){ exit3D(); setTimeout(fn, 120); }
-
-function build3DScene(){
-  const B=window.BABYLON, GUI=B.GUI;
-  const canvas=document.getElementById('b3d-canvas');
-  const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,antialias:true}); b3dEngine=engine;
-  const scene=new B.Scene(engine); b3dScene=scene; scene.clearColor=new B.Color4(0.015,0,0.03,1);
-  const cam=new B.ArcRotateCamera('cam',-Math.PI/2,Math.PI/2.15,15,B.Vector3.Zero(),scene);
-  cam.attachControl(canvas,true); cam.lowerRadiusLimit=9; cam.upperRadiusLimit=24; cam.wheelPrecision=28; cam.minZ=0.05; cam.pinchPrecision=80;
-  new B.HemisphericLight('h',new B.Vector3(0,1,0),scene).intensity=0.45;
-  const glow=new B.GlowLayer('glow',scene); glow.intensity=1.15;
-  const RED=new B.Color3(0.92,0.16,0.3), GOLD=new B.Color3(0.86,0.66,0.1);
-
-  // central reactor core + orbiting rings
-  const core=B.MeshBuilder.CreateSphere('core',{diameter:2.1,segments:28},scene);
-  const cm=new B.StandardMaterial('cm',scene); cm.emissiveColor=RED; cm.diffuseColor=B.Color3.Black(); cm.specularColor=B.Color3.Black(); core.material=cm;
-  const rings=[];
-  for(let i=0;i<3;i++){
-    const r=B.MeshBuilder.CreateTorus('r'+i,{diameter:3.6+i*1.3,thickness:0.05,tessellation:72},scene);
-    const rm=new B.StandardMaterial('rm'+i,scene); rm.emissiveColor=i%2?GOLD:RED; rm.disableLighting=true; r.material=rm;
-    r.rotation.x=Math.PI/2+i*0.5; r.rotation.z=i*0.4; r.spd=(i%2?1:-1)*(0.15+i*0.12); rings.push(r);
-  }
-  // particle "neurons"
-  const dt=new B.DynamicTexture('dot',64,scene,false); const x=dt.getContext();
-  const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'#fff'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); dt.update();
-  const ps=new B.ParticleSystem('p',700,scene); ps.particleTexture=dt; ps.emitter=core;
-  ps.minEmitBox=new B.Vector3(-5,-5,-5); ps.maxEmitBox=new B.Vector3(5,5,5);
-  ps.color1=new B.Color4(0.92,0.2,0.36,1); ps.color2=new B.Color4(0.86,0.66,0.1,1); ps.colorDead=new B.Color4(0,0,0,0);
-  ps.minSize=0.03; ps.maxSize=0.1; ps.minLifeTime=2.5; ps.maxLifeTime=6; ps.emitRate=130;
-  ps.direction1=new B.Vector3(-0.3,-0.3,-0.3); ps.direction2=new B.Vector3(0.3,0.3,0.3); ps.minEmitPower=0.05; ps.maxEmitPower=0.35;
-  ps.blendMode=B.ParticleSystem.BLENDMODE_ADD; ps.start();
-  // starfield
-  const star=new B.ParticleSystem('star',400,scene); star.particleTexture=dt;
-  const se=B.MeshBuilder.CreateSphere('se',{diameter:0.1},scene); se.isVisible=false; star.emitter=se;
-  star.minEmitBox=new B.Vector3(-30,-20,-30); star.maxEmitBox=new B.Vector3(30,20,30);
-  star.color1=new B.Color4(0.6,0.5,0.7,0.5); star.color2=new B.Color4(0.9,0.7,0.3,0.4); star.minSize=0.04; star.maxSize=0.12;
-  star.minLifeTime=9999; star.maxLifeTime=9999; star.emitRate=400; star.manualEmitCount=400; star.updateSpeed=0.002; star.start();
-
-  // ── 3D nav ring: clickable section nodes orbiting the reactor ──
-  const NAV=[['🧠','Brain',()=>nav3D(openNeuro)],['🎓','Academy',()=>nav3D(openAcademy)],['🌀','Feed',()=>nav3D(openDoom)],['🛡','Security',()=>nav3D(openSecCenter)],['⚙','Settings',()=>nav3D(openCfg)],['🗣','Talk',()=>{ if(window._b3dInput){ try{ window._b3dInput.focus(); }catch(e){} } }]];
-  NAV.forEach((nv,i)=>{
-    const a=(i/NAV.length)*Math.PI*2;
-    const plane=B.MeshBuilder.CreatePlane('nv'+i,{width:2.1,height:1.1},scene);
-    plane.position=new B.Vector3(Math.cos(a)*6.5,Math.sin(a)*3.2,0); plane.billboardMode=B.Mesh.BILLBOARDMODE_ALL;
-    const adt=GUI.AdvancedDynamicTexture.CreateForMesh(plane,256,140,false); adt.background='transparent';
-    const btn=GUI.Button.CreateSimpleButton('b'+i, nv[0]+'  '+nv[1]); btn.color='#ffd0d8'; btn.fontSize=42; btn.thickness=2; btn.cornerRadius=14;
-    btn.background='rgba(40,0,20,0.55)'; btn.hoverCursor='pointer'; btn.onPointerEnterObservable.add(()=>btn.background='rgba(120,0,40,0.7)'); btn.onPointerOutObservable.add(()=>btn.background='rgba(40,0,20,0.55)');
-    btn.onPointerClickObservable.add(nv[2]); adt.addControl(btn);
-    plane.nva=a;
-  });
-
-  // ── 3D chat console (fullscreen GUI HUD floating over the scene) ──
-  const ui=GUI.AdvancedDynamicTexture.CreateFullscreenUI('ui3d',true,scene);
-  const title=new GUI.TextBlock(); title.text='J.A.R.V.I.S · 3D CORE'; title.color='#ff6b86'; title.fontSize=20; title.fontStyle='bold'; title.height='34px'; title.top='14px'; title.verticalAlignment=GUI.Control.VERTICAL_ALIGNMENT_TOP; ui.addControl(title);
-
-  const sv=new GUI.ScrollViewer(); sv.width='0.46'; sv.height='0.52'; sv.thickness=1; sv.color='rgba(204,34,68,0.35)'; sv.background='rgba(6,0,12,0.55)'; sv.cornerRadius=12;
-  sv.horizontalAlignment=GUI.Control.HORIZONTAL_ALIGNMENT_LEFT; sv.verticalAlignment=GUI.Control.VERTICAL_ALIGNMENT_CENTER; sv.left='18px'; sv.barColor='#cc2244'; b3dSV=sv;
-  const stack=new GUI.StackPanel(); stack.width='1'; stack.paddingLeft='10px'; stack.paddingRight='10px'; stack.isVertical=true; sv.addControl(stack); b3dStack=stack; ui.addControl(sv);
-
-  const bar=new GUI.StackPanel(); bar.isVertical=false; bar.height='48px'; bar.width='0.48';
-  bar.horizontalAlignment=GUI.Control.HORIZONTAL_ALIGNMENT_LEFT; bar.verticalAlignment=GUI.Control.VERTICAL_ALIGNMENT_BOTTOM; bar.left='18px'; bar.top='-18px';
-  const ip=new GUI.InputText(); ip.width='0.84'; ip.height='46px'; ip.color='#fff'; ip.background='rgba(20,0,10,0.85)'; ip.focusedBackground='rgba(40,0,18,0.95)'; ip.placeholderText='Speak to JARVIS…'; ip.placeholderColor='#9a6a72'; ip.thickness=1; ip.fontSize=16;
-  ip.onKeyboardEventProcessedObservable.add(e=>{ if(e.key==='Enter'){ const t=ip.text; ip.text=''; send3D(t); } });
-  const sendBtn=GUI.Button.CreateSimpleButton('s3d','➤'); sendBtn.width='52px'; sendBtn.height='46px'; sendBtn.color='#fff'; sendBtn.fontSize=20; sendBtn.background='#8a0020'; sendBtn.cornerRadius=8; sendBtn.paddingLeft='6px';
-  sendBtn.onPointerClickObservable.add(()=>{ const t=ip.text; ip.text=''; send3D(t); });
-  bar.addControl(ip); bar.addControl(sendBtn); ui.addControl(bar);
-  window._b3dInput=ip;
-
-  add3DMsg('assistant', cfg.apiUrl ? 'Server vault online. Speak, '+(cfg.name||'Commander')+'.' : 'JARVIS 3D core online. Speak, '+(cfg.name||'Commander')+'.');
-
-  scene.onBeforeRenderObservable.add(()=>{
-    const dtm=engine.getDeltaTime()/1000;
-    core.rotation.y+=dtm*0.3; const pulse=1+Math.sin(performance.now()/600)*0.04; core.scaling.setAll(pulse);
-    rings.forEach(r=>{ r.rotation.y+=dtm*r.spd; r.rotation.z+=dtm*r.spd*0.5; });
-  });
-  engine.runRenderLoop(()=>scene.render());
-  window.addEventListener('resize',()=>engine.resize());
-}
-function add3DMsg(role,text){
-  const GUI=window.BABYLON.GUI;
-  const tb=new GUI.TextBlock(); tb.text=(role==='user'?'❯ '+ (cfg.name||'You') +':  ':'JARVIS:  ')+text;
-  tb.color=role==='user'?'#e8c45a':'#ff8a9e'; tb.fontSize=15; tb.textHorizontalAlignment=GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-  tb.textWrapping=true; tb.resizeToFit=true; tb.paddingTop='5px'; tb.paddingBottom='5px'; tb.width='1';
-  b3dStack.addControl(tb);
-  setTimeout(()=>{ if(b3dSV&&b3dSV.verticalBar) b3dSV.verticalBar.value=1; },30);
-  return { set:(t)=>{ tb.text=(role==='user'?'❯ '+(cfg.name||'You')+':  ':'JARVIS:  ')+t; setTimeout(()=>{ if(b3dSV&&b3dSV.verticalBar) b3dSV.verticalBar.value=1; },20); } };
-}
-async function send3D(text){
-  text=(text||'').trim(); if(!text||b3dBusy) return;
-  b3dBusy=true; add3DMsg('user',text); pushConvo('jarvis','user',text);
-  const stream=add3DMsg('assistant','…');
-  try{
-    const msgs=(convos.jarvis||[]).slice(-8);
-    const full=await callAPI('jarvis',msgs,t=>stream.set(t));
-    stream.set(full); pushConvo('jarvis','assistant',full);
-    if(voiceOut) speak(full);
-  }catch(e){ stream.set('⚠ '+e.message); }
-  b3dBusy=false;
-}
+// ── bridge: expose let-scoped app state so the Three.js ES module can reach it ──
+window.JV = { get cfg(){return cfg}, get convos(){return convos}, get voiceOut(){return voiceOut} };
 
 // ════════════════════════════════════════════════
 // ACADEMY — Teacher Mode: structured courses, lessons taught step-by-step, quizzes
@@ -6133,6 +6043,103 @@ function cleanJarvis() {
 
 
 bootSecure();
+</script>
+
+<!-- ═══ 3D INTERFACE · Three.js + HDRI/PBR (realistic) ═══ -->
+<script type="module">
+let inited=false, running=false, renderer, scene, camera, controls, raf, clock, reactor=null, busy=false;
+
+window.webglOK = function(){ try{ const c=document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2')||c.getContext('webgl'))); }catch(e){ return false; } };
+
+window.enter3D = async function(){
+  if(!window.webglOK()){ window.toast && toast('This browser has no WebGL — 3D needs it (use Chrome on desktop)'); return; }
+  document.getElementById('stage3d').classList.add('open');
+  if(inited){ running=true; onResize(); loop(); return; }
+  const ld=document.getElementById('b3d-loading'); if(ld) ld.style.display='flex';
+  try{
+    const THREE = await import('three');
+    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    const { RGBELoader }    = await import('three/addons/loaders/RGBELoader.js');
+    await build(THREE, OrbitControls, RGBELoader);
+    inited=true; running=true; loop();
+  }catch(e){ window.toast && toast('3D failed: '+e.message); document.getElementById('stage3d').classList.remove('open'); }
+  if(ld) ld.style.display='none';
+};
+window.exit3D = function(){ running=false; if(raf) cancelAnimationFrame(raf); document.getElementById('stage3d').classList.remove('open'); };
+window.nav3D = function(fn){ window.exit3D(); setTimeout(()=>{ if(typeof fn==='function') fn(); }, 130); };
+
+async function build(THREE, OrbitControls, RGBELoader){
+  const canvas=document.getElementById('b3d-canvas');
+  renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15; renderer.outputColorSpace=THREE.SRGBColorSpace;
+  scene=new THREE.Scene(); scene.background=new THREE.Color(0x05030a);
+  camera=new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 100); camera.position.set(0,1.6,7);
+  controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=0.08;
+  controls.minDistance=4; controls.maxDistance=14; controls.target.set(0,0.2,0); controls.autoRotate=true; controls.autoRotateSpeed=0.6;
+  clock=new THREE.Clock();
+
+  // ── HDRI image-based lighting (the realism) ──
+  const pmrem=new THREE.PMREMGenerator(renderer); pmrem.compileEquirectangularShader();
+  const hdr=await new RGBELoader().loadAsync('./vendor/hdri/studio.hdr');
+  hdr.mapping=THREE.EquirectangularReflectionMapping;
+  const env=pmrem.fromEquirectangular(hdr).texture; scene.environment=env; hdr.dispose(); pmrem.dispose();
+
+  // subtle key + rim lights on top of IBL
+  scene.add(new THREE.AmbientLight(0x221018,0.4));
+  const key=new THREE.DirectionalLight(0xffe0e8,1.1); key.position.set(4,6,4); scene.add(key);
+  const rim=new THREE.PointLight(0xff2a48,3,18); rim.position.set(0,0.2,0); scene.add(rim);
+
+  // ── reactor (procedural PBR) ──
+  reactor=new THREE.Group(); scene.add(reactor);
+  const chrome=new THREE.MeshStandardMaterial({color:0x202024, metalness:1.0, roughness:0.16});
+  const gold  =new THREE.MeshStandardMaterial({color:0xb8860b, metalness:1.0, roughness:0.22});
+  const glassM=new THREE.MeshPhysicalMaterial({color:0xffffff, metalness:0, roughness:0.04, transmission:1, thickness:1.3, ior:1.5, transparent:true, attenuationColor:new THREE.Color(0xff3355), attenuationDistance:2.4});
+  const coreM =new THREE.MeshStandardMaterial({color:0x120006, emissive:0xff1e40, emissiveIntensity:3.2, metalness:0.2, roughness:0.4});
+
+  const core=new THREE.Mesh(new THREE.SphereGeometry(0.85,48,48), coreM); reactor.add(core); reactor.userData.core=core;
+  reactor.add(new THREE.Mesh(new THREE.SphereGeometry(1.12,48,48), glassM));
+  const housing=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.18,32,96), chrome); housing.rotation.x=Math.PI/2; reactor.add(housing);
+  const rings=[];
+  for(let i=0;i<3;i++){
+    const r=new THREE.Mesh(new THREE.TorusGeometry(1.9+i*0.55,0.045,20,140), i%2?gold:chrome);
+    r.rotation.x=Math.PI/2 + (i*0.5); r.rotation.y=i*0.4; r.userData.spd=(i%2?1:-1)*(0.2+i*0.12); reactor.add(r); rings.push(r);
+  }
+  reactor.userData.rings=rings;
+
+  // reflective floor grounds it
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(22,64), new THREE.MeshStandardMaterial({color:0x070409, metalness:0.7, roughness:0.35}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-2.4; scene.add(floor);
+
+  addEventListener('resize', onResize);
+  const inp=document.getElementById('b3d-inp'); if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter') window.b3dSend(); });
+  b3dMsg('a', (window.JV.cfg.apiUrl ? 'Server vault online — your keys stay on the backend. ' : '') + 'Core rendered. Speak, '+(window.JV.cfg.name||'Commander')+'.');
+}
+
+function onResize(){ if(!renderer) return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+function loop(){
+  if(!running) return;
+  raf=requestAnimationFrame(loop);
+  const t=clock.getElapsedTime();
+  if(reactor){ reactor.userData.rings.forEach(r=>{ r.rotation.z+=r.userData.spd*0.016; r.rotation.y+=r.userData.spd*0.008; });
+    reactor.userData.core.material.emissiveIntensity=2.6+Math.sin(t*2)*0.7; }
+  controls.update(); renderer.render(scene,camera);
+}
+
+function b3dMsg(role,text){ const c=document.getElementById('b3d-msgs'); const d=document.createElement('div'); d.className='b3d-m '+(role==='u'?'u':'a'); d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight; return d; }
+window.b3dSend = async function(){
+  const inp=document.getElementById('b3d-inp'); const txt=(inp.value||'').trim(); if(!txt||busy) return;
+  inp.value=''; busy=true;
+  b3dMsg('u',txt); window.pushConvo && pushConvo('jarvis','user',txt);
+  const stream=b3dMsg('a','…');
+  try{
+    const msgs=((window.JV.convos.jarvis)||[]).slice(-8);
+    const full=await window.callAPI('jarvis', msgs, x=>{ stream.textContent=x; const c=document.getElementById('b3d-msgs'); c.scrollTop=c.scrollHeight; });
+    stream.textContent=full; window.pushConvo && pushConvo('jarvis','assistant',full);
+    if(window.JV.voiceOut && window.speak) speak(full);
+  }catch(e){ stream.textContent='⚠ '+e.message; }
+  busy=false;
+};
 </script>
 </body>
 </html>
