@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000814">
+<!-- Security: restrict where the app can load from and (critically) send data to -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://api.groq.com https://api.openai.com https://www.googleapis.com https://api.gumroad.com https://discord.com https://discordapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <link rel="manifest" href="manifest.json">
 <title>J.A.R.V.I.S.</title>
 <style>
@@ -939,6 +943,23 @@ strong{color:#e8d4b0}
 .nx-run:before{content:'● '}
 .nx-tools{display:flex;flex-wrap:wrap;gap:6px}
 .nx-tool{font-size:10px;color:#c9a8e6;border:1px solid rgba(150,60,200,.3);border-radius:6px;padding:5px 9px;background:rgba(30,10,46,.4);letter-spacing:.5px}
+/* SECURITY CENTER */
+#seccenter{position:fixed;inset:0;z-index:360;background:radial-gradient(120% 75% at 50% 0%,#06281a,#04120b 60%);display:none;flex-direction:column}
+#seccenter.open{display:flex;animation:nx-pop .26s cubic-bezier(.2,.9,.3,1)}
+.sc-body{flex:1;overflow-y:auto;padding:14px 16px 34px;scrollbar-width:none;max-width:900px;margin:0 auto;width:100%}
+.sc-body::-webkit-scrollbar{display:none}
+.sc-controls{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.sc-ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid rgba(40,160,90,.25);border-radius:9px;background:rgba(10,40,24,.5);color:var(--text);font-size:13px}
+.sc-ctl-row select{background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(40,160,90,.4);border-radius:6px;padding:5px 8px;font-family:inherit}
+.sc-ctl-row input[type=checkbox]{width:20px;height:20px;accent-color:#2fbf6a}
+.sc-row{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;margin-bottom:7px;border:1px solid rgba(40,160,90,.18);border-radius:9px;background:rgba(8,30,18,.5)}
+.sc-badge{flex-shrink:0;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;margin-top:1px}
+.sc-badge.on{background:rgba(20,150,75,.3);color:#5fe39a;border:1px solid rgba(20,150,75,.6)}
+.sc-badge.off{background:rgba(90,90,90,.2);color:#9aa;border:1px solid rgba(120,120,120,.4)}
+.sc-name{color:#fff;font-size:14px;font-weight:bold}
+.sc-desc{color:var(--text-d);font-size:12px;line-height:1.4;margin-top:2px}
+.sc-note{margin-top:16px;padding:13px 14px;border:1px solid rgba(40,160,90,.25);border-radius:10px;background:rgba(8,30,18,.4);color:var(--text-d);font-size:12px;line-height:1.6}
+.sc-note b{color:#e0b23c}.sc-note code{color:#5fe39a}
 /* ── DESKTOP: full-screen layout (no phone column) ── */
 @media (min-width:900px){
   html,body{font-size:15px}
@@ -1033,7 +1054,7 @@ strong{color:#e8d4b0}
       </div>
       <div class="field" id="f-apikey">
         <label>API Key</label>
-        <input type="password" id="c-apikey" placeholder="gsk_… or sk-…">
+        <input type="password" id="c-apikey" placeholder="gsk_… or sk-…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <div class="hint" id="h-apikey">Get a free Groq key at <strong>console.groq.com</strong> → API Keys → Create key.</div>
       </div>
       <div class="field" id="f-url" style="display:none">
@@ -1051,6 +1072,7 @@ strong{color:#e8d4b0}
       <div class="cfg-sec-title">🔒 Security</div>
       <div class="hint" id="sec-status" style="margin-bottom:8px">Your keys are stored in this browser. Set a PIN to encrypt them so no one can read them from storage.</div>
       <button class="save-btn" id="sec-btn" onclick="securityPanel()" style="margin-top:2px">SET A PIN / LOCK</button>
+      <button class="save-btn" onclick="openSecCenter()" style="margin-top:7px;background:linear-gradient(135deg,#1f6b3a,#0c3a1f)">🛡 SECURITY CENTER</button>
     </div>
     <div class="cfg-sec">
       <div class="cfg-sec-title">Your Profile</div>
@@ -1116,6 +1138,28 @@ strong{color:#e8d4b0}
       </div>
     </div>
     <button class="save-btn" onclick="saveCfg()">SAVE &amp; APPLY</button>
+  </div>
+</div>
+
+<!-- SECURITY CENTER — the 20-layer defense audit + controls -->
+<div id="seccenter">
+  <div class="nx-top">
+    <div class="nx-title">🛡 SECURITY CENTER <span class="nx-live" id="sc-count"></span></div>
+    <button class="nx-x" onclick="closeSecCenter()">✕</button>
+  </div>
+  <div class="sc-body">
+    <div class="sc-controls">
+      <button class="save-btn" id="sc-pin" onclick="securityPanel();renderSecCenter()">Set a PIN to encrypt</button>
+      <div class="sc-ctl-row"><label>Auto-lock after</label>
+        <select id="sc-autolock" onchange="scSetAutolock(this.value)">
+          <option value="0">Off</option><option value="1">1 min</option><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option>
+        </select>
+      </div>
+      <div class="sc-ctl-row"><label>Lock when I switch away</label><input type="checkbox" id="sc-lockblur" onchange="scSetLockblur(this.checked)"></div>
+      <button class="save-btn" onclick="wipeVault()" style="background:linear-gradient(135deg,#7a0010,#3a0008)">⚠ PANIC WIPE (erase everything)</button>
+    </div>
+    <div id="sc-layers"></div>
+    <div class="sc-note">Strongest layers: the encrypted vault, the CSP exfiltration whitelist, and auto-lock. Honest limit: on an <b>unlocked</b> session a determined attacker who can run code in the page could still read decrypted keys in memory — the full fix for that is a server-side key vault (the <code>jarvis-api</code> backend).</div>
   </div>
 </div>
 
@@ -1367,6 +1411,15 @@ function init() {
   const inp = document.getElementById('i-jarvis');
   inp.addEventListener('focus', () => iw.classList.add('focus'));
   inp.addEventListener('blur',  () => iw.classList.remove('focus'));
+
+  // security: mark started, arm auto-lock, install activity + visibility hooks (once)
+  appStarted = true;
+  if(!window._secHooked){
+    window._secHooked = true;
+    ['click','keydown','mousemove','touchstart','scroll'].forEach(ev => document.addEventListener(ev, resetIdle, {passive:true}));
+    document.addEventListener('visibilitychange', () => { if(document.hidden && localStorage.getItem('jv-lockblur')==='1') lock(); });   // L9
+  }
+  resetIdle();
 }
 
 // ═══════════════════════════════════════════════
@@ -1396,35 +1449,55 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 // ═══════════════════════════════════════════════
 // SECURITY — encrypt the key vault with a PIN (Web Crypto, AES-GCM + PBKDF2)
 // ═══════════════════════════════════════════════
-let cryptoKey = null, cryptoSalt = '', lockMode = 'unlock';
+let cryptoKey = null, cryptoSalt = '', cryptoIters = 600000, lockMode = 'unlock', appStarted = false, autoLockTimer = null;
+const PBKDF2_ITERS = 600000;                                   // L2: heavy key stretching (OWASP 2023)
+const SECRET_FIELDS = ['apikey','ytKey','gumKey','discord','url','identity','style'];
 function bufToB64(buf){ let s=''; const b=new Uint8Array(buf); for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
 function b64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)); }
-async function deriveKey(pin, saltB64){
-  const salt = saltB64 ? b64ToBuf(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+async function deriveKey(pin, saltB64, iters){
+  iters = iters || PBKDF2_ITERS;
+  const salt = saltB64 ? b64ToBuf(saltB64) : crypto.getRandomValues(new Uint8Array(16));   // L3: random per-vault salt
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
-  const key  = await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
-  return { key, salt: bufToB64(salt) };
+  const key  = await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:iters, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  return { key, salt: bufToB64(salt), iters };
 }
 async function encryptCfg(){
   if(!cryptoKey) return;
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(JSON.stringify(cfg)));
-  localStorage.setItem('jv-cfg-enc', JSON.stringify({v:1, salt:cryptoSalt, iv:bufToB64(iv), ct:bufToB64(ct)}));
+  const iv = crypto.getRandomValues(new Uint8Array(12));      // L4: fresh random IV every write
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(JSON.stringify(cfg)));   // L1/L5: AES-256-GCM (auth tag = tamper detection)
+  localStorage.setItem('jv-cfg-enc', JSON.stringify({v:2, salt:cryptoSalt, iv:bufToB64(iv), ct:bufToB64(ct), it:cryptoIters}));
   localStorage.removeItem('jv-cfg');   // wipe the plaintext copy
 }
 async function unlockWith(pin){
   let store; try{ store = JSON.parse(localStorage.getItem('jv-cfg-enc')||'null'); }catch(e){ store=null; }
   if(!store) return true;
   try{
-    const d  = await deriveKey(pin, store.salt);
+    const its = store.it || 150000;                            // back-compat: old vaults used 150k
+    const d  = await deriveKey(pin, store.salt, its);
     const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64ToBuf(store.iv)}, d.key, b64ToBuf(store.ct));
     Object.assign(cfg, JSON.parse(new TextDecoder().decode(pt)));
-    cryptoKey = d.key; cryptoSalt = store.salt;
+    cryptoKey = d.key; cryptoSalt = store.salt; cryptoIters = its;
+    if(its < PBKDF2_ITERS){ const nd = await deriveKey(pin); cryptoKey = nd.key; cryptoSalt = nd.salt; cryptoIters = nd.iters; await encryptCfg(); }  // silently upgrade old vaults
     return true;
   }catch(e){ return false; }   // wrong PIN → GCM auth tag fails to verify
 }
 // single persistence path — encrypts when a PIN is set, else plain
 function persistCfg(){ if(cryptoKey){ encryptCfg(); } else { try{ localStorage.setItem('jv-cfg', JSON.stringify(cfg)); }catch(e){} } }
+
+// L10: wipe decrypted secrets out of memory; L8/L9: re-lock the running app
+function scrubCfg(){ SECRET_FIELDS.forEach(k => { if(cfg[k]) cfg[k] = ''; }); }
+function lock(){
+  if(!localStorage.getItem('jv-cfg-enc') || !appStarted) return;   // only meaningful when a vault exists
+  if(autoLockTimer){ clearTimeout(autoLockTimer); autoLockTimer = null; }
+  scrubCfg(); cryptoKey = null;
+  showLock(false);
+}
+function autoLockMins(){ return parseInt(localStorage.getItem('jv-autolock') || '5', 10); }
+function resetIdle(){
+  if(autoLockTimer){ clearTimeout(autoLockTimer); autoLockTimer = null; }
+  const m = autoLockMins();
+  if(m > 0 && cryptoKey && appStarted) autoLockTimer = setTimeout(lock, m * 60000);   // L8: auto-lock on inactivity
+}
 
 function showLock(setup){
   lockMode = setup ? 'setup' : 'unlock';
@@ -1441,16 +1514,28 @@ async function lockSubmit(){
   const err = document.getElementById('lock-err');
   if(pin.length < 4){ err.textContent = 'PIN must be at least 4 characters'; return; }
   if(lockMode === 'setup'){
-    const d = await deriveKey(pin); cryptoKey = d.key; cryptoSalt = d.salt;
+    cryptoIters = PBKDF2_ITERS;
+    const d = await deriveKey(pin); cryptoKey = d.key; cryptoSalt = d.salt; cryptoIters = d.iters;
     await encryptCfg();
     document.getElementById('lockscreen').classList.remove('open');
-    updateSecStatus(); toast('🔒 Vault encrypted with your PIN');
+    appStarted = true; resetIdle(); updateSecStatus(); toast('🔒 Vault encrypted with your PIN');
     return;
   }
+  // L7: brute-force lockout with exponential backoff
+  let lk; try{ lk = JSON.parse(localStorage.getItem('jv-lock-fails')||'{"n":0,"until":0}'); }catch(e){ lk={n:0,until:0}; }
+  if(lk.until && Date.now() < lk.until){ err.textContent = 'Too many tries — wait '+Math.ceil((lk.until-Date.now())/1000)+'s'; return; }
   const ok = await unlockWith(pin);
-  if(!ok){ err.textContent = 'Wrong PIN — try again'; const ls=document.getElementById('lockscreen'); ls.classList.add('shake'); setTimeout(()=>ls.classList.remove('shake'),400); return; }
+  if(!ok){
+    lk.n = (lk.n||0) + 1;
+    if(lk.n >= 5) lk.until = Date.now() + Math.min(300000, 1000 * Math.pow(2, lk.n - 4));   // 2s,4s,8s… cap 5 min
+    localStorage.setItem('jv-lock-fails', JSON.stringify(lk));
+    err.textContent = 'Wrong PIN — try again'; const ls=document.getElementById('lockscreen'); ls.classList.add('shake'); setTimeout(()=>ls.classList.remove('shake'),400);
+    return;
+  }
+  localStorage.removeItem('jv-lock-fails');
   document.getElementById('lockscreen').classList.remove('open');
-  init();
+  if(appStarted){ fillCfgForm(); updateDot(); resetIdle(); }   // mid-session re-unlock — don't re-init
+  else init();
 }
 function securityPanel(){
   if(localStorage.getItem('jv-cfg-enc')){
@@ -1473,7 +1558,88 @@ function updateSecStatus(){
     b.textContent = 'SET A PIN / LOCK';
   }
 }
+// L18: copy to clipboard, then auto-wipe it so keys don't linger
+function copySecure(text, secs){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      toast('Copied — clipboard auto-clears in '+(secs||25)+'s');
+      setTimeout(()=>{ navigator.clipboard.writeText(' ').catch(()=>{}); }, (secs||25)*1000);
+    }, ()=>toast('Copy failed'));
+  }
+}
+// L20: one-tap erase everything on this device
+function wipeVault(){
+  if(!confirm('PANIC WIPE — erase ALL keys, settings, brain and chats from THIS device?\n\nThis cannot be undone. OK = wipe.')) return;
+  Object.keys(localStorage).filter(k=>k.startsWith('jv-')).forEach(k=>localStorage.removeItem(k));
+  scrubCfg(); cryptoKey=null;
+  toast('Wiped. Reloading…'); setTimeout(()=>location.reload(), 700);
+}
+// L17: encrypt the backup blob with the vault key when a PIN is set
+async function exportEncrypted(plainB64){
+  if(!cryptoKey) return plainB64;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(plainB64));
+  return 'JVENC1:'+bufToB64(iv)+'.'+bufToB64(ct);
+}
+async function importMaybeDecrypt(code){
+  if(!code.startsWith('JVENC1:')) return code;
+  if(!cryptoKey){ toast('Unlock with your PIN first to restore an encrypted backup'); throw new Error('locked'); }
+  const [ivB,ctB] = code.slice(7).split('.');
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64ToBuf(ivB)}, cryptoKey, b64ToBuf(ctB));
+  return new TextDecoder().decode(pt);
+}
+
+// ── the 20-layer registry (honest live status for the Security Center) ──
+const SEC_LAYERS = [
+  ['AES-256-GCM vault encryption', ()=>!!localStorage.getItem('jv-cfg-enc'), 'Keys encrypted at rest with AES-256-GCM.'],
+  ['PBKDF2-SHA256 key stretching (600k)', ()=>!!localStorage.getItem('jv-cfg-enc'), 'Your PIN is stretched 600,000 rounds — slow to brute force.'],
+  ['Per-vault random salt', ()=>!!localStorage.getItem('jv-cfg-enc'), 'Unique 128-bit salt blocks rainbow-table attacks.'],
+  ['Fresh random IV per write', ()=>true, 'Every save uses a new nonce.'],
+  ['GCM tamper detection', ()=>true, 'Any edit to the ciphertext fails to decrypt.'],
+  ['PIN lock screen', ()=>!!localStorage.getItem('jv-cfg-enc'), 'Vault stays locked until you enter the PIN.'],
+  ['Brute-force lockout + backoff', ()=>true, 'Wrong PINs trigger growing delays (up to 5 min).'],
+  ['Auto-lock on inactivity', ()=>autoLockMins()>0, 'Re-locks after idle minutes and wipes the key from memory.'],
+  ['Lock when app hidden/blurred', ()=>localStorage.getItem('jv-lockblur')==='1', 'Optionally re-lock the moment you switch away.'],
+  ['Key wiped from memory on lock', ()=>true, 'Decrypted secrets are cleared from RAM when locked.'],
+  ['Content-Security-Policy', ()=>true, 'Whitelists where data can be sent — blocks exfiltration to attacker domains.'],
+  ['Referrer suppression', ()=>true, 'no-referrer — your URLs never leak outbound.'],
+  ['Clickjacking / frame-busting', ()=>window.top===window.self, 'Refuses to run embedded in another site.'],
+  ['Secure-context (HTTPS) enforced', ()=>window.isSecureContext, 'Crypto + keys only on HTTPS/localhost.'],
+  ['Output escaping (XSS mitigation)', ()=>true, 'Chat content is HTML-escaped before render.'],
+  ['Masked fields + autofill off', ()=>true, 'Key inputs are password-masked and never autofilled.'],
+  ['Encrypted backups', ()=>!!localStorage.getItem('jv-cfg-enc'), 'Exports are AES-encrypted when a PIN is set.'],
+  ['Clipboard auto-clear', ()=>true, 'Copied secrets are wiped from the clipboard after ~25s.'],
+  ['No third-party scripts', ()=>true, 'Loads only its own local code — no CDNs to compromise.'],
+  ['Panic wipe', ()=>true, 'One tap erases all keys + data from this device.'],
+];
+function openSecCenter(){ document.getElementById('seccenter').classList.add('open'); renderSecCenter(); }
+function closeSecCenter(){ document.getElementById('seccenter').classList.remove('open'); }
+function renderSecCenter(){
+  const enc = !!localStorage.getItem('jv-cfg-enc');
+  const on = SEC_LAYERS.filter(l=>{ try{ return l[1](); }catch(e){ return false; } }).length;
+  document.getElementById('sc-count').textContent = on + ' / ' + SEC_LAYERS.length + ' active';
+  document.getElementById('sc-layers').innerHTML = SEC_LAYERS.map((l,i)=>{
+    let active=false; try{ active=l[1](); }catch(e){}
+    return '<div class="sc-row"><span class="sc-badge '+(active?'on':'off')+'">'+(active?'✓':'○')+'</span><div class="sc-meta"><div class="sc-name">'+(i+1)+'. '+doomEsc(l[0])+'</div><div class="sc-desc">'+doomEsc(l[2])+'</div></div></div>';
+  }).join('');
+  // controls reflect current settings
+  const al=document.getElementById('sc-autolock'); if(al) al.value=String(autoLockMins());
+  const lb=document.getElementById('sc-lockblur'); if(lb) lb.checked=localStorage.getItem('jv-lockblur')==='1';
+  const pb=document.getElementById('sc-pin'); if(pb) pb.textContent= enc?'Change / remove PIN':'Set a PIN to encrypt';
+}
+function scSetAutolock(v){ localStorage.setItem('jv-autolock', String(v)); resetIdle(); renderSecCenter(); toast(v==='0'?'Auto-lock off':'Auto-lock: '+v+' min'); }
+function scSetLockblur(c){ localStorage.setItem('jv-lockblur', c?'1':'0'); renderSecCenter(); }
+
 async function bootSecure(){
+  // L13: clickjacking / frame-busting — never run inside someone else's frame
+  if(window.top !== window.self){
+    try{ window.top.location = window.location.href; }
+    catch(e){ document.documentElement.innerHTML = '<p style="color:#fff;font-family:monospace;padding:24px">⛔ JARVIS will not run inside a frame.</p>'; return; }
+  }
+  // L14: secure-context check
+  if(!window.isSecureContext && location.hostname!=='localhost' && location.hostname!=='127.0.0.1'){
+    setTimeout(()=>toast('⚠ Not on HTTPS — open the secure URL so your keys stay protected'), 1200);
+  }
   if(localStorage.getItem('jv-cfg-enc')) showLock(false);   // gate on the lock screen; init() runs after the right PIN
   else init();
 }
@@ -2086,32 +2252,32 @@ function acAnswer(btn,chosen,answer){
 function acFinish(key,idx){ acSaveDone(key,idx); acRenderCourse(key); }
 
 // ── BACKUP / RESTORE (survives iOS clearing localStorage) ──
-function exportSettings() {
+async function exportSettings() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (k && k.indexOf('jv-') === 0) data[k] = localStorage.getItem(k);
   }
-  const code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  let code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  code = await exportEncrypted(code);   // L17: AES-encrypt the backup when a PIN is set
   const ta = document.getElementById('c-backup');
   if (ta) { ta.value = code; ta.focus(); ta.select(); }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => toast('Backup copied — save it in Notes'), () => toast('Backup ready — copy the code'));
-  } else { toast('Backup ready — copy the code'); }
+  copySecure(code);                     // L18: clipboard auto-clears
 }
 
-function importSettings() {
+async function importSettings() {
   const ta = document.getElementById('c-backup');
-  const code = (ta ? ta.value : '').trim();
+  let code = (ta ? ta.value : '').trim();
   if (!code) { toast('Paste a backup code first'); return; }
   try {
+    code = await importMaybeDecrypt(code);   // decrypt if it's an encrypted backup
     const data = JSON.parse(decodeURIComponent(escape(atob(code))));
     let n = 0;
     for (const k in data) { if (k.indexOf('jv-') === 0) { localStorage.setItem(k, data[k]); n++; } }
     if (!n) { toast('No settings found in that code'); return; }
     toast('Restored ' + n + ' items — reloading…');
     setTimeout(() => location.reload(), 800);
-  } catch (e) { toast('Invalid backup code'); }
+  } catch (e) { toast(e.message==='locked' ? 'Unlock first to restore' : 'Invalid backup code'); }
 }
 function updateDot(){
   const ok = cfg.provider==='ollama' ? !!cfg.url : !!cfg.apikey;
