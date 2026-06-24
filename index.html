@@ -6157,7 +6157,22 @@ bootSecure();
 
 <!-- ═══ 3D INTERFACE · Three.js + HDRI/PBR (realistic) ═══ -->
 <script type="module">
-let inited=false, running=false, renderer, scene, camera, controls, raf, clock, busy=false, sectionModels={}, sectionAreas={}, current='chat', camPos=null, camTgt=null;
+let inited=false, running=false, renderer, scene, camera, controls, raf, clock, busy=false, sectionModels={}, sectionAreas={}, current='chat', camPos=null, camTgt=null, connGroup=null;
+function connectAreas(THREE){
+  const grp=new THREE.Group(); const pulses=[];
+  const core=new THREE.Vector3(...sectionAreas.chat);
+  const tubeMat=new THREE.MeshBasicMaterial({color:0xff3358, transparent:true, opacity:0.32, depthWrite:false});
+  const pulseMat=new THREE.MeshBasicMaterial({color:0xffd8b0});
+  ['brain','security','academy','settings'].forEach(k=>{
+    const p=new THREE.Vector3(...sectionAreas[k]);
+    const mid=core.clone().add(p).multiplyScalar(0.5); mid.y+=4.0;        // arc the conduit upward
+    const curve=new THREE.QuadraticBezierCurve3(core.clone(), mid, p.clone());
+    grp.add(new THREE.Mesh(new THREE.TubeGeometry(curve,48,0.05,10,false), tubeMat));
+    for(let i=0;i<4;i++){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10), pulseMat); grp.add(m); pulses.push({m,curve,t:i/4}); }
+  });
+  grp.userData={pulses};
+  return grp;
+}
 const SECTION_TITLE = { chat:'CORE', brain:'NEUROLINK', security:'SECURITY', academy:'ACADEMY', settings:'CONFIG' };
 function setCamGoal(key){ const a=sectionAreas[key]||[0,0.4,0]; if(camPos){ camPos.set(a[0], a[1]+1.5, a[2]+6.5); camTgt.set(a[0], a[1], a[2]); } }
 function buildBrainNet(THREE){
@@ -6289,11 +6304,9 @@ async function build(THREE, OrbitControls, RGBELoader){
     const m=sectionModels[k], a=sectionAreas[k];
     const holder=new THREE.Group(); holder.position.set(a[0],a[1],a[2]); scene.add(holder);
     m.userData.base=(m.scale&&m.scale.x)||1; holder.add(m);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(3.0,0.035,16,120),
-      new THREE.MeshStandardMaterial({color:0x200006, emissive:(k==='chat')?0xffaa22:0xff2a48, emissiveIntensity:2.5, metalness:0.4, roughness:0.4}));
-    ring.rotation.x=Math.PI/2; ring.position.set(a[0],-2.34,a[2]); scene.add(ring);
     if(m.traverse) m.traverse(o=>{ if(o.isMesh&&o.material){ const mm=o.material; if(mm.name==='core'||mm.name==='vglow'||(mm.emissive&&mm.emissive.r>0.4&&mm.emissiveIntensity>1)) m.userData.coreMat=mm; } });
   }
+  connGroup=connectAreas(THREE); scene.add(connGroup);   // glowing conduits linking the core to each area
   // HUD ring belongs to the CORE area
   frame.rotation.x=Math.PI/2; frame.position.set(0,0.5,-0.3); frame.scale.setScalar(1.05); scene.add(frame); window._b3dFrame=frame;
 
@@ -6321,6 +6334,7 @@ function loop(){
   }
   const bn=sectionModels.brain;   // animate the brain's synapse pulses
   if(bn && bn.userData.pulses){ bn.userData.pulses.forEach(p=>{ p.t+=0.02; if(p.t>=1){ p.t=0; p.c=bn.userData.conns[(Math.random()*bn.userData.conns.length)|0]; } if(p.c) p.m.position.lerpVectors(p.c[0],p.c[1],p.t); }); }
+  if(connGroup){ connGroup.userData.pulses.forEach(p=>{ p.t+=0.006; if(p.t>1) p.t=0; p.curve.getPoint(p.t, p.m.position); }); }   // energy flowing between areas
   if(window._b3dFrame) window._b3dFrame.rotation.z -= 0.0025;
   controls.update(); renderer.render(scene,camera);
 }
