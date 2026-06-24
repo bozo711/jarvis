@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000814">
 <!-- Security: restrict where the app can load from and (critically) send data to -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://api.groq.com https://api.openai.com https://www.googleapis.com https://api.gumroad.com https://discord.com https://discordapp.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://api.groq.com https://api.openai.com https://www.googleapis.com https://api.gumroad.com https://discord.com https://discordapp.com https://*.trycloudflare.com https://*.onrender.com https://*.fly.dev; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <link rel="manifest" href="manifest.json">
@@ -1075,6 +1075,12 @@ strong{color:#e8d4b0}
       <button class="save-btn" onclick="openSecCenter()" style="margin-top:7px;background:linear-gradient(135deg,#1f6b3a,#0c3a1f)">🛡 SECURITY CENTER</button>
     </div>
     <div class="cfg-sec">
+      <div class="cfg-sec-title">🗄 Server Vault (backend)</div>
+      <div class="hint" style="margin-bottom:8px">The strongest option: run the backend on your Mac (<code>./jarvis-api.sh start</code>), paste its URL + token here, and your keys live ONLY on the server — never on this device. Leave blank to use a local key.</div>
+      <div class="field"><label>Backend URL</label><input type="url" id="c-api-url" placeholder="https://….trycloudflare.com" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label>Backend Token</label><input type="password" id="c-api-token" placeholder="from ./jarvis-api.sh url" autocomplete="off"></div>
+    </div>
+    <div class="cfg-sec">
       <div class="cfg-sec-title">Your Profile</div>
       <div class="field"><label>Your Name</label><input type="text" id="c-name" placeholder="Commander"></div>
       <div class="field"><label>Who You Are</label><input type="text" id="c-identity" placeholder="e.g. Miguel, building faceless YouTube + Gumroad products"><div class="hint">JARVIS personalizes every reply with this.</div></div>
@@ -1434,9 +1440,11 @@ async function boot() {
     document.getElementById('boot').style.display = 'none';
     addMsg('jarvis','assistant',
       `JARVIS online. Good ${tod()}, ${cfg.name}. ` +
-      ((cfg.provider==='ollama'?cfg.url:cfg.apikey)
-        ? `API connected. What do you need?`
-        : 'Tap ⚙ to add your Groq API key to get started.'));
+      (cfg.apiUrl
+        ? `Server vault connected — your keys stay on the backend. What do you need?`
+        : (cfg.provider==='ollama'?cfg.url:cfg.apikey)
+          ? `API connected. What do you need?`
+          : 'Tap ⚙ to add your Groq API key to get started.'));
   }, 400);
 }
 
@@ -1659,6 +1667,8 @@ function fillCfgForm() {
   document.getElementById('c-apikey').value   = cfg.apikey||'';
   document.getElementById('c-url').value      = cfg.url||'';
   document.getElementById('c-model').value    = cfg.model||'llama-3.1-8b-instant';
+  if (document.getElementById('c-api-url'))   document.getElementById('c-api-url').value   = cfg.apiUrl||'';
+  if (document.getElementById('c-api-token')) document.getElementById('c-api-token').value = cfg.apiToken||'';
   document.getElementById('c-name').value     = cfg.name||'';
   if (document.getElementById('c-identity')) document.getElementById('c-identity').value = cfg.identity||'';
   if (document.getElementById('c-style')) document.getElementById('c-style').value = cfg.style||'';
@@ -1702,6 +1712,8 @@ function saveCfg() {
   cfg.apikey   = document.getElementById('c-apikey').value.trim();
   cfg.url      = document.getElementById('c-url').value.trim().replace(/\/$/,'');
   cfg.model    = document.getElementById('c-model').value.trim()||'llama-3.1-8b-instant';
+  cfg.apiUrl   = (document.getElementById('c-api-url') ? document.getElementById('c-api-url').value : '').trim().replace(/\/+$/,'');
+  cfg.apiToken = (document.getElementById('c-api-token') ? document.getElementById('c-api-token').value : '').trim();
   cfg.name     = document.getElementById('c-name').value.trim()||'Commander';
   cfg.identity = (document.getElementById('c-identity') ? document.getElementById('c-identity').value : '').trim();
   cfg.style    = (document.getElementById('c-style') ? document.getElementById('c-style').value : '').trim();
@@ -2280,7 +2292,7 @@ async function importSettings() {
   } catch (e) { toast(e.message==='locked' ? 'Unlock first to restore' : 'Invalid backup code'); }
 }
 function updateDot(){
-  const ok = cfg.provider==='ollama' ? !!cfg.url : !!cfg.apikey;
+  const ok = !!cfg.apiUrl || (cfg.provider==='ollama' ? !!cfg.url : !!cfg.apikey);
   document.getElementById('dot').classList.toggle('off', !ok);
 }
 
@@ -2494,7 +2506,23 @@ async function learnMyVoice() {
   else toast('Could not learn voice — try again');
 }
 
+// SERVER VAULT mode: route chat through the backend so the Groq key never lives on this device
+async function backendChat(system, messages, onToken){
+  const base = cfg.apiUrl.replace(/\/+$/,'');
+  const res = await fetch(base + '/api/chat', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-jarvis-token':cfg.apiToken||''},
+    body:JSON.stringify({ messages, system }),
+  });
+  if(!res.ok){ const t=await res.text().catch(()=>''); throw new Error('Backend '+res.status+(res.status===401?' — wrong token':(': '+(t||res.statusText)))); }
+  const d = await res.json();
+  const full = d.reply || '';
+  if(onToken) onToken(full);
+  return full;
+}
+
 async function callAPI(agent, messages, onToken) {
+  if(cfg.apiUrl) return backendChat(sysPrompt(agent), messages, onToken);   // server vault → no local key needed
   const p = cfg.provider || 'groq';
 
   if (p === 'ollama') {
@@ -2542,6 +2570,7 @@ async function callAPI(agent, messages, onToken) {
 }
 
 async function callAPIWithPrompt(sysP, messages, onToken) {
+  if(cfg.apiUrl) return backendChat(sysP, messages, onToken);   // server vault
   const p = cfg.provider || 'groq';
   if (p === 'ollama') {
     if (!cfg.url) throw new Error('No Ollama URL. Tap ⚙ to configure.');
