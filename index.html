@@ -987,6 +987,11 @@ strong{color:#e8d4b0}
 #b3d-panel{position:absolute;right:18px;top:108px;bottom:18px;width:min(360px,40vw);pointer-events:auto;overflow-y:auto;scrollbar-width:none;display:none;flex-direction:column;gap:8px}
 #b3d-panel::-webkit-scrollbar{display:none}
 #b3d-panel.show{display:flex}
+#b3d-reticle{position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;border:1px solid rgba(255,255,255,.45);box-shadow:0 0 9px rgba(204,34,68,.55);pointer-events:none}
+#b3d-joy{display:none;position:absolute;right:24px;bottom:30px;width:118px;height:118px;border-radius:50%;background:rgba(10,0,16,.32);border:1px solid rgba(204,34,68,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto;z-index:2;touch-action:none}
+#b3d-stick{position:absolute;top:50%;left:50%;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,84,114,.92),rgba(120,0,30,.85));border:1px solid rgba(255,180,200,.5);transform:translate(-50%,-50%);box-shadow:0 0 14px rgba(204,34,68,.6)}
+#b3d-hint{position:absolute;bottom:13px;left:50%;transform:translateX(-50%);color:rgba(255,220,228,.72);font-size:11px;letter-spacing:.4px;pointer-events:none;text-shadow:0 0 8px rgba(0,0,0,.85);animation:b3dHintFade 7s forwards}
+@keyframes b3dHintFade{0%,72%{opacity:1}100%{opacity:0}}
 .b3p-row{padding:10px 13px;border-radius:10px;background:rgba(10,0,16,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(204,34,68,.3);color:var(--text);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .b3p-row b{color:#fff;font-weight:600}
 .b3p-badge{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:5px;font-weight:bold;white-space:nowrap}
@@ -1016,37 +1021,64 @@ strong{color:#e8d4b0}
   .inp-area{padding-left:calc((100% - 1000px)/2);padding-right:calc((100% - 1000px)/2)}
 }
 /* ── ACADEMY / TEACHER MODE ── */
-#academy{position:fixed;inset:0;z-index:420;background:var(--bg);display:none;flex-direction:column}
+#academy{position:fixed;inset:0;z-index:420;background:radial-gradient(1200px 620px at 50% -12%, #1a0822, #0a0410 58%, #06030c);display:none;flex-direction:column}
 #academy.open{display:flex}
-.ac-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--red-b);background:rgba(0,0,0,.45)}
+.ac-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--red-b);background:rgba(8,2,12,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:sticky;top:0;z-index:5}
 .ac-top h2{font-size:16px;color:#fff;margin:0;flex:1;letter-spacing:1px;font-weight:bold}
 .ac-back,.ac-x{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1}
-.ac-body{flex:1;overflow-y:auto;padding:16px;scrollbar-width:none}
+.ac-body{flex:1;overflow-y:auto;padding:18px 16px 44px;scrollbar-width:none}
 .ac-body::-webkit-scrollbar{display:none}
-.ac-course{display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:12px;border:1px solid var(--red-b);border-radius:14px;background:var(--red-d);cursor:pointer}
-.ac-course .ic{font-size:28px}
-.ac-course .t{flex:1}
-.ac-course .t b{color:#fff;font-size:16px;display:block;margin-bottom:3px}
-.ac-course .t span{color:var(--text-d);font-size:12px}
-.ac-lesson{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--red-b);border-radius:12px;background:var(--panel);cursor:pointer}
+.ac-wrap{max-width:760px;margin:0 auto}
+.ac-hero{border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg, rgba(154,107,255,.20), rgba(184,134,11,.12));border:1px solid rgba(154,107,255,.32);position:relative;overflow:hidden}
+.ac-hero h1{margin:0 0 4px;font-family:'Cinzel',serif;font-size:22px;color:#fff;letter-spacing:1px}
+.ac-hero p{margin:0 0 14px;color:var(--text-d);font-size:13px}
+.ac-hero .big{font-size:32px;font-weight:800;color:#fff;line-height:1}
+.ac-pb{height:7px;border-radius:6px;background:rgba(255,255,255,.10);overflow:hidden}
+.ac-pb>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--a1,#c89400),var(--a2,#b8860b));box-shadow:0 0 10px var(--a1,#c89400);transition:width .5s}
+.ac-sech{display:flex;align-items:center;gap:9px;margin:24px 4px 12px;color:#fff;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;opacity:.93}
+.ac-sech::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--a1),transparent)}
+.ac-course{display:flex;align-items:center;gap:15px;padding:15px 16px;margin-bottom:12px;border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--a1,#c89400);border-radius:15px;background:linear-gradient(135deg, rgba(255,255,255,.05), rgba(0,0,0,.18));cursor:pointer;transition:transform .14s, box-shadow .14s, border-color .14s}
+.ac-course:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(0,0,0,.42);border-color:var(--a1)}
+.ac-course .ic{font-size:25px;width:50px;height:50px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 18px -3px var(--a1)}
+.ac-course .t{flex:1;min-width:0}
+.ac-course .t b{color:#fff;font-size:15px;display:block;margin-bottom:6px}
+.ac-course .ac-meta{display:flex;align-items:center;gap:9px;color:var(--text-d);font-size:11px;margin-bottom:7px}
+.ac-course .ac-pct{color:var(--a1);font-weight:700}
+.ac-course .chev{color:var(--text-d);font-size:22px;flex-shrink:0}
+.ac-chead{display:flex;align-items:center;gap:15px;padding:18px;border-radius:16px;margin-bottom:18px;background:linear-gradient(135deg,var(--a1),var(--a2));position:relative;overflow:hidden;box-shadow:0 10px 34px -10px var(--a1)}
+.ac-chead .ic{font-size:34px}
+.ac-chead .t{flex:1;color:#fff;min-width:0}
+.ac-chead .t b{font-size:18px;display:block;margin-bottom:3px;font-family:'Cinzel',serif}
+.ac-chead .t span{font-size:12px;opacity:.93}
+.ac-chead .ring{font-size:22px;font-weight:800;color:#fff;flex-shrink:0}
+.ac-lesson{display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:9px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.025);cursor:pointer;transition:background .14s, transform .12s}
+.ac-lesson:hover{background:rgba(255,255,255,.07);transform:translateX(3px)}
 .ac-lesson .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-b);color:#c89400;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
-.ac-lesson.done .n{background:#c89400;color:#000;border-color:#c89400}
+.ac-lesson.done{border-color:rgba(200,148,0,.25)}
+.ac-lesson.done .n{background:linear-gradient(135deg,#e8c24a,#b8860b);color:#000;border-color:#c89400;box-shadow:0 0 10px -2px #c89400}
+.ac-lesson.done .lt{color:var(--text-d)}
 .ac-lesson .lt{flex:1;color:var(--text);font-size:14px}
-.ac-lesson-content{color:var(--text);font-size:16px;line-height:1.7;max-width:680px;margin:0 auto}
-.ac-lesson-content h3{color:#fff;font-size:19px;margin:20px 0 8px}
+.ac-lesson-content{color:var(--text);font-size:16px;line-height:1.75;max-width:680px;margin:0 auto;background:rgba(255,255,255,.022);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:22px 24px}
+.ac-lesson-content h3{color:#fff;font-size:19px;margin:22px 0 8px;font-family:'Cinzel',serif}
+.ac-lesson-content h3:first-child{margin-top:0}
 .ac-lesson-content b{color:#fff}
-.ac-take{display:block;width:100%;max-width:680px;margin:22px auto;padding:14px;border:1px solid var(--gold-b);border-radius:10px;background:var(--gold-d);color:#d8a800;font-family:inherit;font-size:15px;letter-spacing:1px;cursor:pointer}
-.ac-q{max-width:680px;margin:0 auto 16px;border:1px solid var(--red-b);border-radius:12px;padding:14px}
-.ac-q .qt{color:#fff;font-size:15px;margin-bottom:10px;line-height:1.4}
-.ac-opt{display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:7px;border:1px solid var(--red-b);border-radius:8px;background:var(--red-d);color:var(--text);font-family:inherit;font-size:14px;cursor:pointer}
+.ac-takeaways{max-width:680px;margin:16px auto 0;background:linear-gradient(135deg,rgba(184,134,11,.16),rgba(184,134,11,.04));border:1px solid var(--gold-b);border-radius:14px;padding:16px 20px;color:var(--text);line-height:1.75}
+.ac-takeaways h4{margin:0 0 8px;color:#e8c24a;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+.ac-take{display:block;width:100%;max-width:680px;margin:22px auto;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#e8c24a,#b8860b);color:#1a1000;font-family:inherit;font-weight:700;font-size:15px;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px -6px #b8860b}
+.ac-take:hover{filter:brightness(1.08)}
+.ac-q{max-width:680px;margin:0 auto 14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;background:rgba(255,255,255,.025)}
+.ac-q .qt{color:#fff;font-size:15px;margin-bottom:11px;line-height:1.4;font-weight:600}
+.ac-opt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.03);color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;transition:.12s}
+.ac-opt:hover{background:rgba(255,255,255,.07)}
 .ac-opt.right{background:rgba(10,125,44,.32);border-color:#0a7d2c;color:#fff}
 .ac-opt.wrong{background:rgba(150,20,40,.3);border-color:#a02030}
-.ac-module{display:flex;align-items:center;gap:10px;padding:13px 15px;margin:16px 0 9px;border:1px solid var(--gold-b);border-radius:10px;background:var(--gold-d);cursor:pointer}
-.ac-module.done{opacity:.6}
+.ac-module{display:flex;align-items:center;gap:11px;padding:13px 15px;margin:16px 0 10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(0,0,0,.15));cursor:pointer}
 .ac-module .mt{flex:1;color:#fff;font-size:14px;font-weight:bold;letter-spacing:.3px}
-.ac-module .mc{color:#c89400;font-size:12px;font-weight:bold;white-space:nowrap}
+.ac-module.done .mt{color:var(--text-d)}
+.ac-module .mmid{width:84px;flex-shrink:0}
+.ac-module .mc{color:#c89400;font-size:10px;font-weight:bold;white-space:nowrap;margin-top:4px;display:block;text-align:right}
 .ac-module .mch{color:var(--text-d);font-size:13px;width:14px;text-align:center}
-.ac-mod-lessons{margin-left:3px}
+.ac-mod-lessons{margin-left:4px;padding-left:9px;border-left:1px dashed rgba(255,255,255,.09)}
 </style>
 </head>
 <body>
@@ -1203,6 +1235,9 @@ strong{color:#e8d4b0}
       <div id="b3d-inbar"><input id="b3d-inp" placeholder="Speak to JARVIS…" autocomplete="off" autocorrect="off" spellcheck="false"><button id="b3d-send" onclick="b3dSend()">➤</button></div>
     </div>
     <div id="b3d-panel"></div>
+    <div id="b3d-reticle"></div>
+    <div id="b3d-joy"><div id="b3d-stick"></div></div>
+    <div id="b3d-hint">drag to look · WASD / joystick to move · tap a member to approach</div>
   </div>
 </div>
 
@@ -2319,6 +2354,15 @@ ACADEMY.forEach(c => {
   c.lessons = out;
 });
 let acCourse = null, acView = 'grid', acCollapsed = {};
+const AC_ARCH = {
+  mind:  {label:'Mind & Reality',   c1:'#9a6bff', c2:'#5a2bd6'},
+  psych: {label:'Psychology',       c1:'#35d0c0', c2:'#1b8f86'},
+  wealth:{label:'Wealth',           c1:'#e8c24a', c2:'#b8860b'},
+  tech:  {label:'Tech & Systems',   c1:'#4fb8ff', c2:'#1f6bd6'},
+  law:   {label:'Law & Protection', c1:'#ff8f5a', c2:'#c0502a'},
+};
+const AC_ARCH_ORDER = ['mind','psych','wealth','tech','law'];
+function acPct(done,total){ return total? Math.round(done/total*100):0; }
 
 function acProgress(){ try{ return JSON.parse(localStorage.getItem('jv-academy')||'{}'); }catch(e){ return {}; } }
 function acSaveDone(key, idx){ const p=acProgress(); p[key]=p[key]||[]; if(!p[key].includes(idx)) p[key].push(idx); try{ localStorage.setItem('jv-academy', JSON.stringify(p)); }catch(e){} }
@@ -2332,21 +2376,46 @@ function acRenderGrid(){
   acView='grid'; acCourse=null;
   document.getElementById('ac-back').style.display='none';
   document.getElementById('ac-title').textContent='🎓 Academy';
-  const p=acProgress(), body=document.getElementById('ac-body'); body.innerHTML=''; body.scrollTop=0;
-  ACADEMY.forEach(c=>{
-    const done=(p[c.key]||[]).length, total=c.lessons.length;
-    const el=document.createElement('div'); el.className='ac-course';
-    el.innerHTML='<div class="ic">'+c.icon+'</div><div class="t"><b>'+doomEsc(c.title)+'</b><span>'+done+' / '+total+' lessons'+(done>=total&&total?' · complete ✓':'')+'</span></div><div style="color:var(--text-d);font-size:20px">›</div>';
-    el.onclick=()=>acRenderCourse(c.key); body.appendChild(el);
+  const p=acProgress(), body=document.getElementById('ac-body'); body.scrollTop=0;
+  let totDone=0, totAll=0; ACADEMY.forEach(c=>{ totDone+=(p[c.key]||[]).length; totAll+=c.lessons.length; });
+  const tp=acPct(totDone,totAll);
+  const wrap=document.createElement('div'); wrap.className='ac-wrap';
+  const hero=document.createElement('div'); hero.className='ac-hero';
+  hero.innerHTML='<h1>Your Curriculum</h1><p>'+ACADEMY.length+' courses · '+totAll+' lessons on the path to mastery</p>'
+    +'<div class="big">'+tp+'%</div>'
+    +'<div style="color:var(--text-d);font-size:12px;margin:3px 0 11px">'+totDone+' of '+totAll+' lessons complete</div>'
+    +'<div class="ac-pb" style="--a1:#9a6bff;--a2:#e8c24a"><i style="width:'+tp+'%"></i></div>';
+  wrap.appendChild(hero);
+  AC_ARCH_ORDER.forEach(arch=>{
+    const courses=ACADEMY.filter(c=>c.arch===arch); if(!courses.length) return;
+    const a=AC_ARCH[arch]||AC_ARCH.mind;
+    const sh=document.createElement('div'); sh.className='ac-sech'; sh.style.cssText='--a1:'+a.c1; sh.textContent=a.label;
+    wrap.appendChild(sh);
+    courses.forEach(c=>{
+      const done=(p[c.key]||[]).length, total=c.lessons.length, pct=acPct(done,total);
+      const el=document.createElement('div'); el.className='ac-course'; el.style.cssText='--a1:'+a.c1+';--a2:'+a.c2;
+      el.innerHTML='<div class="ic">'+c.icon+'</div><div class="t"><b>'+doomEsc(c.title)+'</b>'
+        +'<div class="ac-meta"><span class="ac-pct">'+pct+'%</span><span>'+done+' / '+total+(done>=total&&total?' · complete ✓':' lessons')+'</span></div>'
+        +'<div class="ac-pb"><i style="width:'+pct+'%"></i></div></div><div class="chev">›</div>';
+      el.onclick=()=>acRenderCourse(c.key); wrap.appendChild(el);
+    });
   });
+  body.innerHTML=''; body.appendChild(wrap);
 }
 
 function acRenderCourse(key){
   acView='course'; acCourse=key;
   document.getElementById('ac-back').style.display='';
-  const c=ACADEMY.find(x=>x.key===key);
+  const c=ACADEMY.find(x=>x.key===key), a=AC_ARCH[c.arch]||AC_ARCH.mind;
   document.getElementById('ac-title').textContent=c.icon+'  '+c.title;
-  const done=acProgress()[key]||[], body=document.getElementById('ac-body'); body.innerHTML=''; body.scrollTop=0;
+  const done=acProgress()[key]||[], body=document.getElementById('ac-body'); body.scrollTop=0;
+  const total=c.lessons.length, pct=acPct(done.length,total);
+  const wrap=document.createElement('div'); wrap.className='ac-wrap';
+  const head=document.createElement('div'); head.className='ac-chead'; head.style.cssText='--a1:'+a.c1+';--a2:'+a.c2;
+  head.innerHTML='<div class="ic">'+c.icon+'</div><div class="t"><b>'+doomEsc(c.title)+'</b>'
+    +'<span>'+done.length+' / '+total+' lessons · '+(c.modules||[]).length+' modules</span>'
+    +'<div class="ac-pb" style="margin-top:9px;--a1:rgba(255,255,255,.95);--a2:rgba(255,255,255,.72)"><i style="width:'+pct+'%"></i></div></div><div class="ring">'+pct+'%</div>';
+  wrap.appendChild(head);
   const mods=c.modules||[], per=Math.max(1,Math.round(c.lessons.length/(mods.length||1)));
   // default-open the first module that isn't fully complete
   let firstOpen=-1;
@@ -2356,19 +2425,22 @@ function acRenderCourse(key){
     const sIdx=mi*per; let dcount=0; for(let j=0;j<per;j++) if(done.includes(sIdx+j)) dcount++;
     const ck=key+':'+mi;
     if(acCollapsed[ck]===undefined) acCollapsed[ck]=(mi!==firstOpen);   // only the first unfinished module starts open
-    const open=!acCollapsed[ck];
-    const hdr=document.createElement('div'); hdr.className='ac-module'+(dcount>=per?' done':'');
-    hdr.innerHTML='<div class="mt">'+doomEsc(m.charAt(0).toUpperCase()+m.slice(1))+'</div><div class="mc">'+dcount+'/'+per+'</div><div class="mch">'+(open?'▾':'▸')+'</div>';
-    const wrap=document.createElement('div'); wrap.className='ac-mod-lessons'; wrap.style.display=open?'':'none';
+    const open=!acCollapsed[ck], mpct=acPct(dcount,per);
+    const hdr=document.createElement('div'); hdr.className='ac-module'+(dcount>=per?' done':''); hdr.style.cssText='--a1:'+a.c1+';--a2:'+a.c2;
+    hdr.innerHTML='<div class="mt">'+doomEsc(m.charAt(0).toUpperCase()+m.slice(1))+'</div>'
+      +'<div class="mmid"><div class="ac-pb"><i style="width:'+mpct+'%"></i></div><span class="mc">'+dcount+'/'+per+'</span></div>'
+      +'<div class="mch">'+(open?'▾':'▸')+'</div>';
+    const lwrap=document.createElement('div'); lwrap.className='ac-mod-lessons'; lwrap.style.display=open?'':'none';
     for(let j=0;j<per;j++){
       const i=sIdx+j; if(i>=c.lessons.length) break;
       const el=document.createElement('div'); el.className='ac-lesson'+(done.includes(i)?' done':'');
       el.innerHTML='<div class="n">'+(done.includes(i)?'✓':(i+1))+'</div><div class="lt">'+doomEsc(c.lessons[i])+'</div>';
-      el.onclick=()=>acOpenLesson(key,i); wrap.appendChild(el);
+      el.onclick=()=>acOpenLesson(key,i); lwrap.appendChild(el);
     }
-    hdr.onclick=()=>{ acCollapsed[ck]=!acCollapsed[ck]; const sh=!acCollapsed[ck]; wrap.style.display=sh?'':'none'; hdr.querySelector('.mch').textContent=sh?'▾':'▸'; };
-    body.appendChild(hdr); body.appendChild(wrap);
+    hdr.onclick=()=>{ acCollapsed[ck]=!acCollapsed[ck]; const sh=!acCollapsed[ck]; lwrap.style.display=sh?'':'none'; hdr.querySelector('.mch').textContent=sh?'▾':'▸'; };
+    wrap.appendChild(hdr); wrap.appendChild(lwrap);
   });
+  body.innerHTML=''; body.appendChild(wrap);
 }
 
 async function acOpenLesson(key, idx){
@@ -2390,10 +2462,11 @@ async function acOpenLesson(key, idx){
 
 function acRenderLesson(key,idx,lt,d){
   const body=document.getElementById('ac-body');
-  let html='<div class="ac-lesson-content"><h3>'+doomEsc(lt)+'</h3>'+acMd(d.lesson||'');
-  if((d.takeaways||[]).length){ html+='<h3>Key takeaways</h3>'; d.takeaways.forEach(t=>{ html+='• '+doomEsc(t)+'<br>'; }); }
-  html+='</div><button class="ac-take" id="ac-take">Take the quiz →</button><div id="ac-quiz"></div>';
-  body.innerHTML=html; body.scrollTop=0;
+  const wrap=document.createElement('div'); wrap.className='ac-wrap';
+  let html='<div class="ac-lesson-content"><h3>'+doomEsc(lt)+'</h3>'+acMd(d.lesson||'')+'</div>';
+  if((d.takeaways||[]).length){ html+='<div class="ac-takeaways"><h4>✦ Key takeaways</h4>'; d.takeaways.forEach(t=>{ html+='• '+doomEsc(t)+'<br>'; }); html+='</div>'; }
+  html+='<button class="ac-take" id="ac-take">Take the quiz →</button><div id="ac-quiz"></div>';
+  wrap.innerHTML=html; body.innerHTML=''; body.appendChild(wrap); body.scrollTop=0;
   const quiz=d.quiz||[];
   document.getElementById('ac-take').onclick=()=>acRenderQuiz(key,idx,quiz);
 }
@@ -6157,7 +6230,76 @@ bootSecure();
 
 <!-- ═══ 3D INTERFACE · Three.js + HDRI/PBR (realistic) ═══ -->
 <script type="module">
-let inited=false, running=false, renderer, scene, camera, controls, raf, clock, busy=false, sectionModels={}, sectionAreas={}, current='chat', camPos=null, camTgt=null, connGroup=null, composer=null;
+let inited=false, running=false, renderer, scene, camera, raf, clock, busy=false, sectionModels={}, sectionAreas={}, sectionHolders=[], current='chat', connGroup=null, composer=null, T=null, raycaster=null, lastT=0;
+// ── free-roam controller state (look around + move toward floating members) ──
+let yaw=0, pitch=-0.06, keyState={}, joyVec={x:0,y:0}, lookId=null, lookLast=null, downInfo=null, autoPos=null, autoYaw=null, autoPitch=null, touchMode=false;
+function lerpAngle(a,b,t){ let d=((b-a+Math.PI)%(2*Math.PI))-Math.PI; if(d<-Math.PI) d+=2*Math.PI; return a+d*t; }
+// fly the camera to a standoff point in front of a member and turn to face it
+function approachSection(key){
+  if(!T||!camera) return;
+  const A=new T.Vector3(...(sectionAreas[key]||[0,0.5,0]));
+  const back=camera.position.clone().sub(A); back.y=Math.max(0.4,back.y); if(back.lengthSq()<0.01) back.set(0,0.6,1);
+  back.normalize().multiplyScalar(key==='chat'?6.2:5.2);
+  autoPos=A.clone().add(back); autoPos.y=A.y+1.2;
+  const tmp=new T.Object3D(); tmp.position.copy(autoPos); tmp.lookAt(A); tmp.rotation.reorder('YXZ');
+  autoYaw=tmp.rotation.y; autoPitch=tmp.rotation.x;
+}
+function tapSelect(e){
+  if(!raycaster||!sectionHolders.length) return;
+  const r=renderer.domElement.getBoundingClientRect();
+  const ndc=new T.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits=raycaster.intersectObjects(sectionHolders, true);
+  if(hits.length){ let o=hits[0].object; while(o){ if(o.userData&&o.userData.sectionKey){ goSection(o.userData.sectionKey); break; } o=o.parent; } }
+}
+function updateCamera(dt){
+  if(autoPos){                                   // auto-approach a member
+    camera.position.lerp(autoPos, Math.min(1,dt*3));
+    yaw=lerpAngle(yaw,autoYaw,Math.min(1,dt*4));
+    pitch+=(autoPitch-pitch)*Math.min(1,dt*4);
+    if(camera.position.distanceTo(autoPos)<0.05){ camera.position.copy(autoPos); autoPos=null; }
+  } else {                                        // free movement (keys + joystick)
+    let f=0,s=0,u=0;
+    if(keyState['w']||keyState['arrowup'])f+=1; if(keyState['s']||keyState['arrowdown'])f-=1;
+    if(keyState['a']||keyState['arrowleft'])s-=1; if(keyState['d']||keyState['arrowright'])s+=1;
+    if(keyState[' '])u+=1; if(keyState['c'])u-=1;
+    f-=joyVec.y; s+=joyVec.x;
+    if(f||s||u){
+      const sp=(keyState['shift']?15:7.5)*dt;
+      const fwd=new T.Vector3(-Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw)*Math.cos(pitch));
+      const right=new T.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+      const mv=new T.Vector3().addScaledVector(fwd,f).addScaledVector(right,s); mv.y+=u;
+      if(mv.lengthSq()>0){ mv.normalize().multiplyScalar(sp); camera.position.add(mv); }
+    }
+  }
+  camera.rotation.set(pitch,yaw,0,'YXZ');
+}
+function setupControls(){
+  const cv=renderer.domElement;
+  raycaster=new T.Raycaster();
+  cv.addEventListener('pointerdown', e=>{ if(e.pointerType==='touch'&&!touchMode){ touchMode=true; const j=document.getElementById('b3d-joy'); if(j) j.style.display='block'; }
+    lookId=e.pointerId; lookLast={x:e.clientX,y:e.clientY}; downInfo={x:e.clientX,y:e.clientY,t:performance.now()}; });
+  addEventListener('pointermove', e=>{ if(e.pointerId!==lookId||!lookLast) return;
+    const dx=e.clientX-lookLast.x, dy=e.clientY-lookLast.y; lookLast={x:e.clientX,y:e.clientY};
+    if(Math.abs(dx)+Math.abs(dy)>2) autoPos=null;          // taking manual control cancels auto-approach
+    yaw-=dx*0.0045; pitch=Math.max(-1.3,Math.min(1.3, pitch-dy*0.0045)); });
+  addEventListener('pointerup', e=>{ if(e.pointerId!==lookId) return; lookId=null; lookLast=null;
+    const moved=downInfo?Math.abs(e.clientX-downInfo.x)+Math.abs(e.clientY-downInfo.y):99;
+    const dur=downInfo?performance.now()-downInfo.t:999;
+    if(moved<6&&dur<350) tapSelect(e); downInfo=null; });
+  addEventListener('keydown', e=>{ keyState[e.key.toLowerCase()]=true; });
+  addEventListener('keyup', e=>{ keyState[e.key.toLowerCase()]=false; });
+  // on-screen joystick (mobile)
+  const joy=document.getElementById('b3d-joy'), stick=document.getElementById('b3d-stick'); let joyId=null, joyC=null;
+  if(joy){
+    const jm=e=>{ let dx=e.clientX-joyC.x, dy=e.clientY-joyC.y; const m=Math.hypot(dx,dy)||1, R=joyC.R; if(m>R){ dx*=R/m; dy*=R/m; }
+      joyVec.x=dx/R; joyVec.y=dy/R; stick.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))'; };
+    joy.addEventListener('pointerdown', e=>{ e.stopPropagation(); joyId=e.pointerId; const r=joy.getBoundingClientRect(); joyC={x:r.left+r.width/2,y:r.top+r.height/2,R:r.width/2}; joy.setPointerCapture(e.pointerId); jm(e); });
+    joy.addEventListener('pointermove', e=>{ if(e.pointerId===joyId) jm(e); });
+    const end=e=>{ if(e.pointerId===joyId){ joyId=null; joyVec.x=0; joyVec.y=0; stick.style.transform='translate(-50%,-50%)'; } };
+    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
+  }
+}
 function connectAreas(THREE){
   const grp=new THREE.Group(); const pulses=[];
   const keys=['chat','brain','security','academy','settings'];
@@ -6177,7 +6319,6 @@ function connectAreas(THREE){
   return grp;
 }
 const SECTION_TITLE = { chat:'CORE', brain:'NEUROLINK', security:'SECURITY', academy:'ACADEMY', settings:'CONFIG' };
-function setCamGoal(key){ const a=sectionAreas[key]||[0,0.4,0]; if(camPos){ camPos.set(a[0], a[1]+1.5, a[2]+6.5); camTgt.set(a[0], a[1], a[2]); } }
 function makeLabel(THREE, text){
   const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d');
   x.font='bold 28px "Courier New",monospace'; x.fillStyle='#ffe2e8'; x.textAlign='center'; x.textBaseline='middle';
@@ -6262,30 +6403,29 @@ window.webglOK = function(){ try{ const c=document.createElement('canvas'); retu
 window.enter3D = async function(){
   if(!window.webglOK()){ window.toast && toast('This browser has no WebGL — 3D needs it (use Chrome on desktop)'); return; }
   document.getElementById('stage3d').classList.add('open');
-  if(inited){ running=true; onResize(); loop(); return; }
+  if(inited){ running=true; lastT=clock.getElapsedTime(); onResize(); loop(); return; }
   const ld=document.getElementById('b3d-loading'); if(ld) ld.style.display='flex';
   try{
     const THREE = await import('three');
-    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
     const { RGBELoader }    = await import('three/addons/loaders/RGBELoader.js');
-    await build(THREE, OrbitControls, RGBELoader);
-    inited=true; running=true; loop();
+    await build(THREE, RGBELoader);
+    inited=true; running=true; lastT=clock.getElapsedTime(); loop();
   }catch(e){ window.toast && toast('3D failed: '+e.message); document.getElementById('stage3d').classList.remove('open'); }
   if(ld) ld.style.display='none';
 };
 window.exit3D = function(){ running=false; if(raf) cancelAnimationFrame(raf); document.getElementById('stage3d').classList.remove('open'); };
 window.nav3D = function(fn){ window.exit3D(); setTimeout(()=>{ if(typeof fn==='function') fn(); }, 130); };
 
-async function build(THREE, OrbitControls, RGBELoader){
+async function build(THREE, RGBELoader){
+  T=THREE;
   const canvas=document.getElementById('b3d-canvas');
   renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
   renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15; renderer.outputColorSpace=THREE.SRGBColorSpace;
   scene=new THREE.Scene(); scene.background=new THREE.Color(0x05030a);
-  camera=new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 100); camera.position.set(0,1.6,7);
-  controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=0.08;
-  controls.minDistance=3.5; controls.maxDistance=12; controls.target.set(0,0.2,0); controls.autoRotate=false;
+  camera=new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 200); camera.position.set(0,1.8,9);
   clock=new THREE.Clock();
+  setupControls();
   // ── bloom post-processing (real glow on emissive cores/conduits) ──
   const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
   const { RenderPass }     = await import('three/addons/postprocessing/RenderPass.js');
@@ -6324,43 +6464,44 @@ async function build(THREE, OrbitControls, RGBELoader){
   const brainNet=buildBrainNet(THREE); brainNet.scale.setScalar(1.3);
   sectionModels = { chat: rmesh, brain: brainNet, security: vault, academy: acad, settings: gears };
   sectionAreas  = { chat:[0,0.5,0], brain:[-14,0.8,0], security:[14,0.8,0], academy:[-14,0.8,-15], settings:[14,0.8,-15] };
+  sectionHolders=[];
   for(const k of ['chat','brain','security','academy','settings']){
     const m=sectionModels[k], a=sectionAreas[k];
-    const holder=new THREE.Group(); holder.position.set(a[0],a[1],a[2]); scene.add(holder);
-    m.userData.base=(m.scale&&m.scale.x)||1; holder.add(m);
+    const holder=new THREE.Group(); holder.position.set(a[0],a[1],a[2]); holder.userData.sectionKey=k; scene.add(holder);
+    m.userData.base=(m.scale&&m.scale.x)||1; holder.add(m); sectionHolders.push(holder);
     if(m.traverse) m.traverse(o=>{ if(o.isMesh&&o.material){ const mm=o.material; if(mm.name==='core'||mm.name==='vglow'||(mm.emissive&&mm.emissive.r>0.4&&mm.emissiveIntensity>1)) m.userData.coreMat=mm; } });
+    const lab=makeLabel(THREE, SECTION_TITLE[k]||k); lab.position.set(0,2.0,0); lab.scale.set(3,0.75,1); holder.add(lab);   // floating name so you can tell members apart
   }
   connGroup=connectAreas(THREE); scene.add(connGroup);   // glowing conduits linking the core to each area
   // HUD ring belongs to the CORE area
   frame.rotation.x=Math.PI/2; frame.position.set(0,0.5,-0.3); frame.scale.setScalar(1.05); scene.add(frame); window._b3dFrame=frame;
 
   current='chat';
-  camPos=new THREE.Vector3(); camTgt=new THREE.Vector3();
-  setCamGoal('chat'); camera.position.copy(camPos); controls.target.copy(camTgt);
+  yaw=0; pitch=-0.06; camera.position.set(0,1.8,9); camera.rotation.set(pitch,yaw,0,'YXZ');
   const t3=document.getElementById('b3d-title3'); if(t3) t3.textContent='CORE';
 
   addEventListener('resize', onResize);
   const inp=document.getElementById('b3d-inp'); if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter') window.b3dSend(); });
-  b3dMsg('a', (window.JV.cfg.apiUrl ? 'Server vault online — keys stay on the backend. ' : '') + 'Systems online. Use the nav to fly between areas. Speak, '+(window.JV.cfg.name||'Commander')+'.');
+  b3dMsg('a', (window.JV.cfg.apiUrl ? 'Server vault online — keys stay on the backend. ' : '') + 'Systems online. Look around (drag), move (WASD / joystick), or tap a glowing member to approach it. Speak, '+(window.JV.cfg.name||'Commander')+'.');
 }
 
 function onResize(){ if(!renderer) return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); if(composer) composer.setSize(innerWidth,innerHeight); }
 function loop(){
   if(!running) return;
   raf=requestAnimationFrame(loop);
-  const t=clock.getElapsedTime();
-  if(camPos){ camera.position.lerp(camPos,0.05); controls.target.lerp(camTgt,0.07); }   // fly between areas
-  const cm=sectionModels[current];
-  if(cm){
-    cm.rotation.y += 0.005;
-    if(cm.userData.pop!==undefined && cm.userData.pop<1){ cm.userData.pop=Math.min(1,cm.userData.pop+0.08); const e=1-Math.pow(1-cm.userData.pop,3); cm.scale.setScalar(cm.userData.base*(0.55+0.45*e)); }
-    if(cm.userData.coreMat) cm.userData.coreMat.emissiveIntensity = 5+Math.sin(t*2)*2;
+  const t=clock.getElapsedTime(); const dt=Math.min(0.05, t-lastT); lastT=t;
+  updateCamera(dt);                                  // look-around + free movement
+  let ci=0;
+  for(const k in sectionModels){ const m=sectionModels[k]; if(!m) continue;
+    m.rotation.y += (k===current?0.006:0.0026);
+    if(m.userData.pop!==undefined && m.userData.pop<1){ m.userData.pop=Math.min(1,m.userData.pop+0.08); const e=1-Math.pow(1-m.userData.pop,3); m.scale.setScalar(m.userData.base*(0.55+0.45*e)); }
+    if(m.userData.coreMat) m.userData.coreMat.emissiveIntensity = 5+Math.sin(t*2+(ci++))*2;
   }
   const bn=sectionModels.brain;   // animate the brain's synapse pulses
   if(bn && bn.userData.pulses){ bn.userData.pulses.forEach(p=>{ p.t+=0.02; if(p.t>=1){ p.t=0; p.c=bn.userData.conns[(Math.random()*bn.userData.conns.length)|0]; } if(p.c) p.m.position.lerpVectors(p.c[0],p.c[1],p.t); }); }
   if(connGroup){ connGroup.userData.pulses.forEach(p=>{ p.t+=0.006; if(p.t>1) p.t=0; p.curve.getPoint(p.t, p.m.position); }); }   // energy flowing between areas
   if(window._b3dFrame) window._b3dFrame.rotation.z -= 0.0025;
-  controls.update(); if(composer) composer.render(); else renderer.render(scene,camera);
+  if(composer) composer.render(); else renderer.render(scene,camera);
 }
 
 function b3dMsg(role,text){ const c=document.getElementById('b3d-msgs'); const d=document.createElement('div'); d.className='b3d-m '+(role==='u'?'u':'a'); d.textContent=text; c.appendChild(d); c.scrollTop=c.scrollHeight; return d; }
@@ -6382,7 +6523,7 @@ function b3esc(s){ return String(s||'').replace(/[&<>]/g, m => ({'&':'&amp;','<'
 window.goSection = function(key){
   if(!sectionModels[key]) key = 'chat';
   current = key;
-  setCamGoal(key);                                   // fly the camera to that area
+  approachSection(key);                               // walk the camera up to that member
   const m=sectionModels[key]; if(m){ m.userData.pop = 0; m.scale.setScalar((m.userData.base||1)*0.6); }   // re-activate pop
   const t3=document.getElementById('b3d-title3'); if(t3) t3.textContent = SECTION_TITLE[key]||'';
   const chat=document.getElementById('b3d-chat'), panel=document.getElementById('b3d-panel');
