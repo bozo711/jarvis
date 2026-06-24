@@ -878,7 +878,7 @@ strong{color:#e8d4b0}
 .code-send-btn{background:linear-gradient(135deg,rgba(0,80,0,.5),rgba(0,50,0,.3));border:1px solid #004400;border-radius:8px;color:#00cc44;font-size:18px;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .code-send-btn:hover{background:rgba(0,100,0,.5)}
 /* ── DOOMSCROLL ── */
-#doom{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column}
+#doom{position:fixed;inset:0;z-index:420;background:var(--bg);display:none;flex-direction:column}
 #doom.open{display:flex}
 .doom-feed{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
 .doom-feed::-webkit-scrollbar{display:none}
@@ -920,7 +920,7 @@ strong{color:#e8d4b0}
 .imp-btn{margin-top:24px;padding:13px 30px;border:1.5px solid rgba(255,255,255,.55);border-radius:30px;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
 .imp-done{margin-top:20px;font-size:13px;letter-spacing:2px;color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:30px;padding:10px 24px;display:inline-block}
 /* NEUROLINK cortex HUD */
-#neuro{position:fixed;inset:0;z-index:360;background:radial-gradient(120% 75% at 50% 0%,#2a0640,#070310 60%);display:none;flex-direction:column}
+#neuro{position:fixed;inset:0;z-index:420;background:radial-gradient(120% 75% at 50% 0%,#2a0640,#070310 60%);display:none;flex-direction:column}
 #neuro.open{display:flex;animation:nx-pop .28s cubic-bezier(.2,.9,.3,1)}
 @keyframes nx-pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .nx-top{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(150,60,200,.25)}
@@ -947,7 +947,7 @@ strong{color:#e8d4b0}
 .nx-tools{display:flex;flex-wrap:wrap;gap:6px}
 .nx-tool{font-size:10px;color:#c9a8e6;border:1px solid rgba(150,60,200,.3);border-radius:6px;padding:5px 9px;background:rgba(30,10,46,.4);letter-spacing:.5px}
 /* SECURITY CENTER */
-#seccenter{position:fixed;inset:0;z-index:360;background:radial-gradient(120% 75% at 50% 0%,#06281a,#04120b 60%);display:none;flex-direction:column}
+#seccenter{position:fixed;inset:0;z-index:420;background:radial-gradient(120% 75% at 50% 0%,#06281a,#04120b 60%);display:none;flex-direction:column}
 #seccenter.open{display:flex;animation:nx-pop .26s cubic-bezier(.2,.9,.3,1)}
 .sc-body{flex:1;overflow-y:auto;padding:14px 16px 34px;scrollbar-width:none;max-width:900px;margin:0 auto;width:100%}
 .sc-body::-webkit-scrollbar{display:none}
@@ -983,6 +983,19 @@ strong{color:#e8d4b0}
 #b3d-inp{flex:1;background:rgba(10,0,16,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(204,34,68,.45);border-radius:11px;color:#fff;font-family:inherit;font-size:15px;padding:12px 14px;outline:none}
 #b3d-inp:focus{border-color:var(--live);box-shadow:0 0 16px rgba(204,34,68,.35)}
 #b3d-send{width:50px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--red),#6b0000);color:#fff;font-size:18px;cursor:pointer}
+#b3d-title3{position:absolute;top:74px;left:0;right:0;text-align:center;color:#fff;font-family:'Cinzel',serif;font-size:18px;letter-spacing:5px;pointer-events:none;text-shadow:0 0 18px rgba(204,34,68,.6)}
+#b3d-panel{position:absolute;right:18px;top:108px;bottom:18px;width:min(360px,40vw);pointer-events:auto;overflow-y:auto;scrollbar-width:none;display:none;flex-direction:column;gap:8px}
+#b3d-panel::-webkit-scrollbar{display:none}
+#b3d-panel.show{display:flex}
+.b3p-row{padding:10px 13px;border-radius:10px;background:rgba(10,0,16,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(204,34,68,.3);color:var(--text);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.b3p-row b{color:#fff;font-weight:600}
+.b3p-badge{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:5px;font-weight:bold;white-space:nowrap}
+.b3p-on{background:rgba(20,150,75,.3);color:#5fe39a;border:1px solid rgba(20,150,75,.5)}
+.b3p-off{background:rgba(150,110,0,.25);color:#e0b23c;border:1px solid rgba(150,110,0,.5)}
+.b3p-btn{padding:12px;border-radius:10px;border:1px solid rgba(204,34,68,.5);background:linear-gradient(135deg,rgba(120,0,30,.6),rgba(60,0,15,.5));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-family:inherit;font-size:13px;letter-spacing:1px;cursor:pointer;text-align:center}
+.b3p-btn:hover{border-color:var(--live)}
+.b3p-tap{cursor:pointer;transition:.12s}
+.b3p-tap:hover{border-color:var(--live);background:rgba(40,0,20,.7)}
 /* ── DESKTOP: full-screen layout (no phone column) ── */
 @media (min-width:900px){
   html,body{font-size:15px}
@@ -1003,7 +1016,7 @@ strong{color:#e8d4b0}
   .inp-area{padding-left:calc((100% - 1000px)/2);padding-right:calc((100% - 1000px)/2)}
 }
 /* ── ACADEMY / TEACHER MODE ── */
-#academy{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column}
+#academy{position:fixed;inset:0;z-index:420;background:var(--bg);display:none;flex-direction:column}
 #academy.open{display:flex}
 .ac-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--red-b);background:rgba(0,0,0,.45)}
 .ac-top h2{font-size:16px;color:#fff;margin:0;flex:1;letter-spacing:1px;font-weight:bold}
@@ -1177,16 +1190,19 @@ strong{color:#e8d4b0}
   <div id="b3d-loading"><div class="boot-ring"></div><div style="color:#fff;letter-spacing:3px;margin-top:16px;font-size:12px">RENDERING CORE…</div></div>
   <div id="b3d-hud">
     <div id="b3d-nav">
-      <button onclick="nav3D(openNeuro)" title="Brain">🧠</button>
-      <button onclick="nav3D(openAcademy)" title="Academy">🎓</button>
-      <button onclick="nav3D(openDoom)" title="Feed">🌀</button>
-      <button onclick="nav3D(openSecCenter)" title="Security">🛡</button>
-      <button onclick="nav3D(openCfg)" title="Settings">⚙</button>
+      <button onclick="goSection('chat')" title="Core · Chat">◉</button>
+      <button onclick="goSection('brain')" title="Brain">🧠</button>
+      <button onclick="goSection('academy')" title="Academy">🎓</button>
+      <button onclick="goSection('security')" title="Security">🛡</button>
+      <button onclick="goSection('settings')" title="Settings">⚙</button>
+      <button onclick="openDoom()" title="Doomscroll (2D)">🌀</button>
     </div>
+    <div id="b3d-title3"></div>
     <div id="b3d-chat">
       <div id="b3d-msgs"></div>
       <div id="b3d-inbar"><input id="b3d-inp" placeholder="Speak to JARVIS…" autocomplete="off" autocorrect="off" spellcheck="false"><button id="b3d-send" onclick="b3dSend()">➤</button></div>
     </div>
+    <div id="b3d-panel"></div>
   </div>
 </div>
 
@@ -2150,8 +2166,8 @@ async function dispatchAgents(){
   toast('Minds finished');
 }
 
-// ── bridge: expose let-scoped app state so the Three.js ES module can reach it ──
-window.JV = { get cfg(){return cfg}, get convos(){return convos}, get voiceOut(){return voiceOut} };
+// ── bridge: expose let/const-scoped app state so the Three.js ES module can reach it ──
+window.JV = { get cfg(){return cfg}, get convos(){return convos}, get voiceOut(){return voiceOut}, get subsys(){return NEURO_SUBSYS}, get layers(){return SEC_LAYERS}, get academy(){return ACADEMY} };
 
 // ════════════════════════════════════════════════
 // ACADEMY — Teacher Mode: structured courses, lessons taught step-by-step, quizzes
@@ -6047,7 +6063,8 @@ bootSecure();
 
 <!-- ═══ 3D INTERFACE · Three.js + HDRI/PBR (realistic) ═══ -->
 <script type="module">
-let inited=false, running=false, renderer, scene, camera, controls, raf, clock, reactor=null, busy=false;
+let inited=false, running=false, renderer, scene, camera, controls, raf, clock, reactor=null, busy=false, sectionModels={}, current='chat';
+const SECTION_TITLE = { chat:'CORE', brain:'NEUROLINK', security:'SECURITY', academy:'ACADEMY', settings:'CONFIG' };
 
 window.webglOK = function(){ try{ const c=document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2')||c.getContext('webgl'))); }catch(e){ return false; } };
 
@@ -6093,18 +6110,24 @@ async function build(THREE, OrbitControls, RGBELoader){
   // ── load the Blender-built GLB assets (real PBR, lit by the HDRI) ──
   const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const gl = new GLTFLoader();
-  const [rg, hf, rm] = await Promise.all([
-    gl.loadAsync('./vendor/models/reactor.glb'),
-    gl.loadAsync('./vendor/models/hudframe.glb'),
-    gl.loadAsync('./vendor/models/room.glb'),
+  const load = p => gl.loadAsync(p).then(g => g.scene);
+  const [rmesh, frame, room, brain, vault, acad, gears] = await Promise.all([
+    load('./vendor/models/reactor.glb'), load('./vendor/models/hudframe.glb'), load('./vendor/models/room.glb'),
+    load('./vendor/models/brain.glb'),   load('./vendor/models/vault.glb'),    load('./vendor/models/academy.glb'), load('./vendor/models/gears.glb'),
   ]);
-  reactor = new THREE.Group(); scene.add(reactor);
-  const rmesh = rg.scene; rmesh.scale.setScalar(1.2); reactor.add(rmesh);
-  let coreMat = null;
-  rmesh.traverse(o => { if(o.isMesh && o.material){ const m=o.material; if(m.name==='core' || (m.emissive && m.emissive.r>0.4 && m.emissiveIntensity>1)) coreMat=m; } });
-  reactor.userData.coreMat = coreMat;
-  const frame = hf.scene; frame.rotation.x = Math.PI/2; frame.position.z = -0.3; frame.scale.setScalar(1.05); scene.add(frame); reactor.userData.frame = frame;
-  const room = rm.scene; scene.add(room);
+  // static framing
+  frame.rotation.x = Math.PI/2; frame.position.z = -0.3; frame.scale.setScalar(1.05); scene.add(frame); window._b3dFrame = frame;
+  scene.add(room);
+  // each SECTION is its own model, parented to a tilt group at the core position
+  reactor = new THREE.Group(); reactor.position.y = 0.15; reactor.rotation.x = -0.18; scene.add(reactor);
+  rmesh.scale.setScalar(1.2); rmesh.rotation.x = Math.PI*0.18;   // tilt the reactor so it faces you (less spaceship)
+  brain.scale.setScalar(1.15); vault.scale.setScalar(1.25); acad.scale.setScalar(1.25); gears.scale.setScalar(1.2);
+  sectionModels = { chat: rmesh, brain, security: vault, academy: acad, settings: gears };
+  for(const k in sectionModels){ const m = sectionModels[k]; m.visible = (k === 'chat'); m.userData.base = m.scale.x; reactor.add(m);
+    m.traverse(o => { if(o.isMesh && o.material){ const mm=o.material; if(mm.name==='core' || mm.name==='vglow' || (mm.emissive && mm.emissive.r>0.4 && mm.emissiveIntensity>1)) m.userData.coreMat = mm; } });
+  }
+  current = 'chat';
+  const t3=document.getElementById('b3d-title3'); if(t3) t3.textContent='CORE';
 
   addEventListener('resize', onResize);
   const inp=document.getElementById('b3d-inp'); if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter') window.b3dSend(); });
@@ -6116,11 +6139,13 @@ function loop(){
   if(!running) return;
   raf=requestAnimationFrame(loop);
   const t=clock.getElapsedTime();
-  if(reactor){
-    reactor.rotation.y += 0.004;
-    if(reactor.userData.frame) reactor.userData.frame.rotation.z -= 0.0025;
-    if(reactor.userData.coreMat) reactor.userData.coreMat.emissiveIntensity = 5 + Math.sin(t*2)*2;
+  const cm=sectionModels[current];
+  if(cm){
+    cm.rotation.y += 0.005;
+    if(cm.userData.pop!==undefined && cm.userData.pop<1){ cm.userData.pop=Math.min(1,cm.userData.pop+0.08); const e=1-Math.pow(1-cm.userData.pop,3); cm.scale.setScalar(cm.userData.base*(0.5+0.5*e)); }
+    if(cm.userData.coreMat) cm.userData.coreMat.emissiveIntensity = 5+Math.sin(t*2)*2;
   }
+  if(window._b3dFrame) window._b3dFrame.rotation.z -= 0.0025;
   controls.update(); renderer.render(scene,camera);
 }
 
@@ -6138,6 +6163,39 @@ window.b3dSend = async function(){
   }catch(e){ stream.textContent='⚠ '+e.message; }
   busy=false;
 };
+
+function b3esc(s){ return String(s||'').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+window.goSection = function(key){
+  if(!sectionModels[key]) key = 'chat';
+  current = key;
+  for(const k in sectionModels){ const m=sectionModels[k]; m.visible=(k===key); }
+  const m=sectionModels[key]; m.userData.pop = 0; m.scale.setScalar(m.userData.base*0.5);   // pop-in
+  const t3=document.getElementById('b3d-title3'); if(t3) t3.textContent = SECTION_TITLE[key]||'';
+  const chat=document.getElementById('b3d-chat'), panel=document.getElementById('b3d-panel');
+  if(key==='chat'){ chat.style.display=''; panel.classList.remove('show'); }
+  else { chat.style.display='none'; panel.classList.add('show'); renderSection(key); }
+};
+function renderSection(key){
+  const p=document.getElementById('b3d-panel'); if(!p) return; let h='';
+  if(key==='brain'){
+    h += window.JV.subsys.map(s => '<div class="b3p-row"><b>'+b3esc(s[0])+'</b><span class="b3p-badge '+(s[1]==='LIVE'?'b3p-on':'b3p-off')+'">'+s[1]+'</span></div>').join('');
+    h += '<div class="b3p-btn" onclick="openNeuro()">OPEN NEUROLINK ▸</div>';
+  } else if(key==='security'){
+    h += window.JV.layers.map((l,i) => { let on=false; try{ on=l[1](); }catch(e){} return '<div class="b3p-row"><b>'+(i+1)+'. '+b3esc(l[0])+'</b><span class="b3p-badge '+(on?'b3p-on':'b3p-off')+'">'+(on?'✓':'○')+'</span></div>'; }).join('');
+    h += '<div class="b3p-btn" onclick="openSecCenter()">OPEN SECURITY CENTER ▸</div>';
+  } else if(key==='academy'){
+    h += window.JV.academy.map(c => '<div class="b3p-row b3p-tap" onclick="openAcademy();acRenderCourse(\''+c.key+'\')"><b>'+c.icon+' '+b3esc(c.title)+'</b><span class="b3p-badge b3p-off">'+c.lessons.length+'</span></div>').join('');
+    h += '<div class="b3p-btn" onclick="openAcademy()">OPEN ACADEMY ▸</div>';
+  } else if(key==='settings'){
+    const c=window.JV.cfg;
+    h += '<div class="b3p-row"><b>Name</b><span>'+b3esc(c.name||'—')+'</span></div>';
+    h += '<div class="b3p-row"><b>Niche</b><span>'+b3esc(c.niche||'—')+'</span></div>';
+    h += '<div class="b3p-row"><b>Goal</b><span>$'+((c.goal||0).toLocaleString())+'</span></div>';
+    h += '<div class="b3p-row"><b>Keys</b><span class="b3p-badge '+((c.apiUrl||c.apikey)?'b3p-on':'b3p-off')+'">'+(c.apiUrl?'SERVER VAULT':(c.apikey?'LOCAL':'NONE'))+'</span></div>';
+    h += '<div class="b3p-btn" onclick="openCfg()">OPEN SETTINGS ▸</div>';
+  }
+  p.innerHTML=h; p.scrollTop=0;
+}
 </script>
 </body>
 </html>
