@@ -29,6 +29,16 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 /* ── BOOT ── */
 #boot{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .8s ease}
 #boot.out{opacity:0;pointer-events:none}
+#lockscreen{position:fixed;inset:0;background:radial-gradient(120% 90% at 50% 0%,rgba(90,0,28,.35),#000);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10000;padding:0 28px}
+#lockscreen.open{display:flex}
+.lock-ring{font-size:46px;margin-bottom:18px;filter:drop-shadow(0 0 18px rgba(204,34,68,.6))}
+.lock-title{font-size:20px;letter-spacing:5px;color:#fff;font-weight:bold;margin-bottom:6px}
+.lock-sub{font-size:12px;letter-spacing:1px;color:var(--text-d);margin-bottom:22px;text-align:center}
+#lock-pin{width:100%;max-width:260px;text-align:center;font-size:24px;letter-spacing:10px;padding:14px;background:rgba(10,0,16,.85);border:1px solid var(--red-b);border-radius:12px;color:#fff;outline:none;margin-bottom:12px;-webkit-appearance:none}
+#lock-pin:focus{border-color:var(--live);box-shadow:0 0 14px rgba(204,34,68,.35)}
+.lock-err{color:#ff5a78;font-size:12px;min-height:16px;margin-bottom:10px;letter-spacing:.5px}
+#lockscreen.shake{animation:lock-shake .4s}
+@keyframes lock-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
 .boot-ring{width:110px;height:110px;border-radius:50%;border:2px solid transparent;border-top-color:var(--red);border-right-color:var(--gold);animation:spin 1.2s linear infinite;box-shadow:0 0 28px rgba(100,0,30,.8),inset 0 0 20px rgba(60,0,20,.15)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .boot-title{margin-top:22px;font-size:11px;letter-spacing:8px;color:var(--red);text-shadow:0 0 16px var(--red),0 0 40px rgba(120,0,0,.5);font-family:'Cinzel',serif}
@@ -902,6 +912,32 @@ strong{color:#e8d4b0}
 .imp-recap li:before{content:'\2726';position:absolute;left:0;color:rgba(255,255,255,.85)}
 .imp-btn{margin-top:24px;padding:13px 30px;border:1.5px solid rgba(255,255,255,.55);border-radius:30px;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
 .imp-done{margin-top:20px;font-size:13px;letter-spacing:2px;color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:30px;padding:10px 24px;display:inline-block}
+/* NEUROLINK cortex HUD */
+#neuro{position:fixed;inset:0;z-index:300;background:radial-gradient(120% 70% at 50% 0%,rgba(46,0,66,.55),#04030a 62%);display:none;flex-direction:column}
+#neuro.open{display:flex}
+.nx-top{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(150,60,200,.25)}
+.nx-title{flex:1;color:#fff;font-size:15px;letter-spacing:2px;font-weight:bold}
+.nx-live{font-size:10px;color:#5fd38a;letter-spacing:1px;margin-left:8px;font-weight:normal}
+.nx-x{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.nx-canvas-wrap{position:relative;height:34vh;min-height:210px;flex-shrink:0}
+#neuro-cv{width:100%;height:100%;display:block}
+.nx-canvas-cap{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:rgba(200,170,230,.5);font-size:9px;letter-spacing:3px;text-transform:uppercase;pointer-events:none}
+.nx-body{flex:1;overflow-y:auto;padding:8px 16px 34px;scrollbar-width:none}
+.nx-body::-webkit-scrollbar{display:none}
+.nx-sec-t{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#b07adf;margin:18px 0 9px}
+.nx-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;margin-bottom:6px;border:1px solid rgba(150,60,200,.2);border-radius:8px;background:rgba(30,10,46,.5);color:var(--text);font-size:13px}
+.nx-badge{font-size:9px;letter-spacing:1.5px;padding:2px 8px;border-radius:5px;font-weight:bold}
+.nx-badge.on{background:rgba(20,140,70,.28);color:#5fd38a;border:1px solid rgba(20,140,70,.5)}
+.nx-badge.plan{background:rgba(150,110,0,.25);color:#e0b23c;border:1px solid rgba(150,110,0,.5)}
+.nx-badge.ok{background:rgba(60,90,160,.25);color:#8fb0ff;border:1px solid rgba(60,90,160,.5)}
+.nx-agents{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nx-agent{border:1px solid rgba(150,60,200,.25);border-radius:9px;padding:10px;background:rgba(30,10,46,.5)}
+.nx-aname{color:#cf9bff;font-size:11px;font-weight:bold;letter-spacing:1.5px}
+.nx-atask{color:var(--text);font-size:12px;margin:4px 0 6px;line-height:1.3}
+.nx-run{font-size:9px;letter-spacing:1px;color:#5fd38a}
+.nx-run:before{content:'● '}
+.nx-tools{display:flex;flex-wrap:wrap;gap:6px}
+.nx-tool{font-size:10px;color:#c9a8e6;border:1px solid rgba(150,60,200,.3);border-radius:6px;padding:5px 9px;background:rgba(30,10,46,.4);letter-spacing:.5px}
 /* ── ACADEMY / TEACHER MODE ── */
 #academy{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column}
 #academy.open{display:flex}
@@ -945,6 +981,16 @@ strong{color:#e8d4b0}
   <div class="boot-log" id="boot-log"></div>
 </div>
 
+<!-- Lock screen (encrypted vault) -->
+<div id="lockscreen">
+  <div class="lock-ring">🔒</div>
+  <div class="lock-title" id="lock-title">ENTER PIN</div>
+  <div class="lock-sub" id="lock-sub">Unlock your encrypted vault</div>
+  <input id="lock-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" maxlength="32" onkeydown="if(event.key==='Enter')lockSubmit()">
+  <div class="lock-err" id="lock-err"></div>
+  <button class="save-btn" style="max-width:260px" onclick="lockSubmit()" id="lock-go">UNLOCK</button>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -980,6 +1026,11 @@ strong{color:#e8d4b0}
         <input type="text" id="c-model" placeholder="llama-3.1-8b-instant">
         <div class="hint" id="h-model">Groq free models: <code>llama-3.1-8b-instant</code> (fast) · <code>llama-3.3-70b-versatile</code> (smarter)</div>
       </div>
+    </div>
+    <div class="cfg-sec">
+      <div class="cfg-sec-title">🔒 Security</div>
+      <div class="hint" id="sec-status" style="margin-bottom:8px">Your keys are stored in this browser. Set a PIN to encrypt them so no one can read them from storage.</div>
+      <button class="save-btn" id="sec-btn" onclick="securityPanel()" style="margin-top:2px">SET A PIN / LOCK</button>
     </div>
     <div class="cfg-sec">
       <div class="cfg-sec-title">Your Profile</div>
@@ -1048,6 +1099,23 @@ strong{color:#e8d4b0}
   </div>
 </div>
 
+<!-- NEUROLINK — JARVIS's animated cortex / system status -->
+<div id="neuro">
+  <div class="nx-top">
+    <div class="nx-title">🧠 NEUROLINK <span class="nx-live" id="neuro-live"></span></div>
+    <button class="nx-x" onclick="closeNeuro()">✕</button>
+  </div>
+  <div class="nx-canvas-wrap"><canvas id="neuro-cv"></canvas><div class="nx-canvas-cap">cortex · live activity</div></div>
+  <div class="nx-body">
+    <div class="nx-sec-t">Cortex status</div>
+    <div id="neuro-status"></div>
+    <div class="nx-sec-t">Parallel minds</div>
+    <div id="neuro-agents" class="nx-agents"></div>
+    <div class="nx-sec-t"><span id="neuro-tcount"></span></div>
+    <div id="neuro-tools" class="nx-tools"></div>
+  </div>
+</div>
+
 <!-- DOOMSCROLL — swipe through useful insights + quick games -->
 <div id="doom">
   <button class="doom-x" onclick="closeDoom()">✕</button>
@@ -1099,6 +1167,7 @@ strong{color:#e8d4b0}
       <button class="icon-btn" onclick="toggleHandsFree()" id="hands-free-btn" title="Hands-free conversation" style="opacity:0.4">🗣</button>
       <button class="icon-btn" onclick="visionLook()" id="vision-btn" title="Let JARVIS see your screen/camera (once)">👁</button>
       <button class="icon-btn" onclick="toggleWatch()" id="watch-btn" title="Watch my screen/camera continuously">📡</button>
+      <button class="icon-btn" onclick="openNeuro()" title="NEUROLINK — JARVIS's cortex, tools & agents">🧠</button>
       <button class="icon-btn" onclick="openAcademy()" title="Teacher mode — structured lessons">🎓</button>
       <button class="icon-btn" onclick="openDoom()" title="Doomscroll — insights, games & more">🌀</button>
       <button class="icon-btn" onclick="openCfg()">⚙</button>
@@ -1303,12 +1372,98 @@ function tod() {
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 // ═══════════════════════════════════════════════
+// SECURITY — encrypt the key vault with a PIN (Web Crypto, AES-GCM + PBKDF2)
+// ═══════════════════════════════════════════════
+let cryptoKey = null, cryptoSalt = '', lockMode = 'unlock';
+function bufToB64(buf){ let s=''; const b=new Uint8Array(buf); for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
+function b64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)); }
+async function deriveKey(pin, saltB64){
+  const salt = saltB64 ? b64ToBuf(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+  const key  = await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  return { key, salt: bufToB64(salt) };
+}
+async function encryptCfg(){
+  if(!cryptoKey) return;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, cryptoKey, new TextEncoder().encode(JSON.stringify(cfg)));
+  localStorage.setItem('jv-cfg-enc', JSON.stringify({v:1, salt:cryptoSalt, iv:bufToB64(iv), ct:bufToB64(ct)}));
+  localStorage.removeItem('jv-cfg');   // wipe the plaintext copy
+}
+async function unlockWith(pin){
+  let store; try{ store = JSON.parse(localStorage.getItem('jv-cfg-enc')||'null'); }catch(e){ store=null; }
+  if(!store) return true;
+  try{
+    const d  = await deriveKey(pin, store.salt);
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64ToBuf(store.iv)}, d.key, b64ToBuf(store.ct));
+    Object.assign(cfg, JSON.parse(new TextDecoder().decode(pt)));
+    cryptoKey = d.key; cryptoSalt = store.salt;
+    return true;
+  }catch(e){ return false; }   // wrong PIN → GCM auth tag fails to verify
+}
+// single persistence path — encrypts when a PIN is set, else plain
+function persistCfg(){ if(cryptoKey){ encryptCfg(); } else { try{ localStorage.setItem('jv-cfg', JSON.stringify(cfg)); }catch(e){} } }
+
+function showLock(setup){
+  lockMode = setup ? 'setup' : 'unlock';
+  document.getElementById('lock-title').textContent = setup ? 'CREATE A PIN' : 'ENTER PIN';
+  document.getElementById('lock-sub').textContent   = setup ? 'This encrypts your keys. You will need it every time you open the app.' : 'Unlock your encrypted vault';
+  document.getElementById('lock-go').textContent    = setup ? 'SET PIN' : 'UNLOCK';
+  document.getElementById('lock-err').textContent   = '';
+  const pin = document.getElementById('lock-pin'); pin.value = '';
+  document.getElementById('lockscreen').classList.add('open');
+  setTimeout(()=>pin.focus(), 120);
+}
+async function lockSubmit(){
+  const pin = document.getElementById('lock-pin').value.trim();
+  const err = document.getElementById('lock-err');
+  if(pin.length < 4){ err.textContent = 'PIN must be at least 4 characters'; return; }
+  if(lockMode === 'setup'){
+    const d = await deriveKey(pin); cryptoKey = d.key; cryptoSalt = d.salt;
+    await encryptCfg();
+    document.getElementById('lockscreen').classList.remove('open');
+    updateSecStatus(); toast('🔒 Vault encrypted with your PIN');
+    return;
+  }
+  const ok = await unlockWith(pin);
+  if(!ok){ err.textContent = 'Wrong PIN — try again'; const ls=document.getElementById('lockscreen'); ls.classList.add('shake'); setTimeout(()=>ls.classList.remove('shake'),400); return; }
+  document.getElementById('lockscreen').classList.remove('open');
+  init();
+}
+function securityPanel(){
+  if(localStorage.getItem('jv-cfg-enc')){
+    if(confirm('Remove the PIN lock? Your keys will be stored unencrypted in this browser again.\n\nOK = remove · Cancel = keep it')){
+      cryptoKey = null; cryptoSalt = '';
+      localStorage.removeItem('jv-cfg-enc');
+      try{ localStorage.setItem('jv-cfg', JSON.stringify(cfg)); }catch(e){}
+      updateSecStatus(); toast('Lock removed');
+    }
+  } else { showLock(true); }
+}
+function updateSecStatus(){
+  const s = document.getElementById('sec-status'), b = document.getElementById('sec-btn');
+  if(!s || !b) return;
+  if(localStorage.getItem('jv-cfg-enc')){
+    s.innerHTML = '🔒 <b style="color:#5fd38a">Encrypted.</b> Your keys are AES-256 encrypted with your PIN — storage only holds ciphertext, and the app asks for your PIN on open.';
+    b.textContent = 'REMOVE PIN LOCK';
+  } else {
+    s.textContent = 'Your keys are stored in this browser. Set a PIN to encrypt them so no one can read them from storage.';
+    b.textContent = 'SET A PIN / LOCK';
+  }
+}
+async function bootSecure(){
+  if(localStorage.getItem('jv-cfg-enc')) showLock(false);   // gate on the lock screen; init() runs after the right PIN
+  else init();
+}
+
+// ═══════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════
 function loadCfg() {
-  try { Object.assign(cfg, JSON.parse(localStorage.getItem('jv-cfg')||'{}')); } catch(e){}
+  if(!cryptoKey){ try { Object.assign(cfg, JSON.parse(localStorage.getItem('jv-cfg')||'{}')); } catch(e){} }
   fillCfgForm();
   updateDot();
+  updateSecStatus();
 }
 
 function fillCfgForm() {
@@ -1373,13 +1528,13 @@ function saveCfg() {
   cfg.tgToken   = document.getElementById('c-tg-token').value.trim();
   cfg.tgChat    = document.getElementById('c-tg-chat').value.trim();
   cfg.discordWh = document.getElementById('c-discord-wh').value.trim();
-  localStorage.setItem('jv-cfg', JSON.stringify(cfg));
+  persistCfg();
   refreshSales();
   refreshYouTube();
   updateStats(); updateDot(); closeCfg(); toast('Saved');
 }
 
-function openCfg()  { document.getElementById('cfg').classList.add('open'); }
+function openCfg()  { document.getElementById('cfg').classList.add('open'); updateSecStatus(); }
 function closeCfg() { document.getElementById('cfg').classList.remove('open'); }
 
 // ════════════════════════════════════════════════
@@ -1395,6 +1550,8 @@ const DOOM_TOPICS = [
   {key:'stoic',   label:'Stoicism',          vq:'Marcus Aurelius stoicism explained',                               hint:'Stoic philosophy from real sources — "Meditations" (Marcus Aurelius), Epictetus, Seneca. Practical, applicable.'},
   {key:'wealth',  label:'Wealth',            vq:'wealth mindset Napoleon Hill lecture',                             hint:'wealth and success principles from real books — "Think and Grow Rich" (Napoleon Hill), "The Richest Man in Babylon", "Rich Dad Poor Dad"'},
   {key:'eng',     label:'Engineering',       vq:'system design concepts explained engineer',                        hint:'software engineering & system design — Docker, Kubernetes, containerisation, CI/CD, the cloud (AWS S3/SQS/Lambda/DynamoDB), serverless, load balancers, caching, proxies, sharding/partitioning, rate limiting, throughput/QPS, websockets, RPC, polling, Kafka/RabbitMQ, encryption, firewalls, git. Teach the concept clearly and name the tool.'},
+  {key:'psych',   label:'Psychology',        vq:'cognitive bias psychology explained',                              hint:'psychology, cognitive biases & mental models — base rate fallacy, confirmation bias, anchoring, loss aversion, the availability heuristic, social proof, the sunk cost fallacy, framing. Explain each clearly with an everyday example; cite real sources (Daniel Kahneman "Thinking, Fast and Slow", Robert Cialdini "Influence", Charlie Munger).'},
+  {key:'legal',   label:'App Law',           vq:'app privacy law terms of service explained',                       hint:'plain-English legal essentials for building & selling an app or digital product — terms of service, privacy policy, protecting user data, the FTC Act & honest advertising, disclosing AI use, disclaimers, arbitration clauses, intellectual property. Practical and concrete; note this is education, not legal advice.'},
 ];
 let doomTopic = 'foryou';
 let doomDepth = parseInt(localStorage.getItem('jv-doom-depth')||'0', 10);  // grows the longer you use it → deeper content
@@ -1418,8 +1575,9 @@ const DOOM_COLORS = {
   foryou:['#3b2a7a','#7b3fa0'], mind:['#5b2a8c','#b0277e'], quantum:['#15497a','#1f9bb0'],
   manifest:['#8c2a6e','#c04a8a'], laws:['#1f6b5e','#2f9b6a'], ancient:['#7a4a16','#b07a2f'],
   stoic:['#33414f','#5a6b7e'], wealth:['#1f6b3a','#86902f'], eng:['#7a3416','#b0532f'],
+  psych:['#6a2a8c','#b04a9e'], legal:['#1f4a6b','#3f7a9b'],
 };
-const DOOM_ICONS = { foryou:'🧭', mind:'🧠', quantum:'⚛️', manifest:'✨', laws:'🌀', ancient:'📜', stoic:'🏛️', wealth:'💰', eng:'🛠️' };
+const DOOM_ICONS = { foryou:'🧭', mind:'🧠', quantum:'⚛️', manifest:'✨', laws:'🌀', ancient:'📜', stoic:'🏛️', wealth:'💰', eng:'🛠️', psych:'🧩', legal:'⚖️' };
 function doomGrad(key){ const c = DOOM_COLORS[key] || DOOM_COLORS.foryou; return 'linear-gradient(160deg,'+c[0]+','+c[1]+')'; }
 
 // build ONE short lesson (cover + ~5 teach cards + recap), grounded in real sources
@@ -1603,6 +1761,93 @@ function openDoom(){
 function closeDoom(){ document.getElementById('doom').classList.remove('open'); }
 
 // ════════════════════════════════════════════════
+// NEUROLINK — animated cortex + system status (grounded in JARVIS's real capabilities)
+// ════════════════════════════════════════════════
+const NEURO_SUBSYS = [
+  ['Prefrontal · reasoning','LIVE'], ['Language · chat','LIVE'], ['Hippocampus · memory','LIVE'],
+  ['Sensory · vision (see/watch)','LIVE'], ['Motor · actions (Gumroad/Discord)','LIVE'], ['Concept · academy','LIVE'],
+  ['Auditory · beat engine','LIVE'], ['Speech · voice TTS','LIVE'], ['Security · encrypted vault','LIVE'],
+  ['Predictive · forecasting','PLANNED'], ['Reflex · wake word','PLANNED'], ['Cerebellum · 24/7 automation','PLANNED'],
+];
+const NEURO_AGENTS = [
+  ['ATLAS','researching the market'], ['SCRIBE','writing the product'],
+  ['HUNTER','finding the next sale'], ['LEDGER','tracking the numbers'],
+  ['MUSE','cooking a beat'], ['SENTRY','guarding your keys'],
+];
+const NEURO_TOOLS = [
+  'chat','research','write_product','make_beat','export_wav','video_idea','batch_video','pick_upload',
+  'gumroad_sales','youtube_stats','discord_blast','see_screen','watch_screen','academy','doomscroll',
+  'remember','brain_search','auto_memory','learn_voice','set_identity','status','insights','quiz','voice_out',
+];
+const NEURO_REGIONS = ['#5b8cff','#ff4d6d','#c04a9e','#9b6bff','#3fd07a','#ff7a4d'];
+let neuroRAF = null, neuroNodes = [], neuroPulses = [];
+
+function openNeuro(){
+  document.getElementById('neuro').classList.add('open');
+  neuroRenderPanels();
+  setTimeout(()=>{ neuroInit(); if(!neuroRAF) neuroFrame(); }, 60);
+}
+function closeNeuro(){
+  document.getElementById('neuro').classList.remove('open');
+  if(neuroRAF){ cancelAnimationFrame(neuroRAF); neuroRAF=null; }
+}
+function neuroRenderPanels(){
+  const live = NEURO_SUBSYS.filter(s=>s[1]==='LIVE').length;
+  document.getElementById('neuro-live').textContent = '● LIVE '+live+' / '+NEURO_SUBSYS.length;
+  document.getElementById('neuro-status').innerHTML = NEURO_SUBSYS.map(s=>{
+    const cls = s[1]==='LIVE'?'on':(s[1]==='PLANNED'?'plan':'ok');
+    return '<div class="nx-row"><span>'+doomEsc(s[0])+'</span><span class="nx-badge '+cls+'">'+s[1]+'</span></div>';
+  }).join('');
+  document.getElementById('neuro-agents').innerHTML = NEURO_AGENTS.map(a=>
+    '<div class="nx-agent"><div class="nx-aname">'+doomEsc(a[0])+'</div><div class="nx-atask">'+doomEsc(a[1])+'…</div><div class="nx-run">running</div></div>'
+  ).join('');
+  document.getElementById('neuro-tools').innerHTML = NEURO_TOOLS.map(t=>'<span class="nx-tool">'+doomEsc(t)+'</span>').join('');
+  document.getElementById('neuro-tcount').textContent = NEURO_TOOLS.length+' tools wired';
+}
+function neuroInit(){
+  const cv = document.getElementById('neuro-cv'); if(!cv) return;
+  const w = cv.width = cv.offsetWidth, h = cv.height = cv.offsetHeight;
+  neuroNodes = []; neuroPulses = [];
+  const N = Math.min(60, Math.max(34, Math.round(w/14)));
+  for(let i=0;i<N;i++){
+    const a = Math.random()*Math.PI*2, rr = Math.pow(Math.random(),0.6)*Math.min(w,h)*0.46;
+    neuroNodes.push({ x:w/2+Math.cos(a)*rr*1.3, y:h/2+Math.sin(a)*rr, c:NEURO_REGIONS[(Math.random()*NEURO_REGIONS.length)|0], ph:Math.random()*6.28 });
+  }
+}
+function neuroFrame(){
+  const cv = document.getElementById('neuro-cv');
+  if(!cv || !document.getElementById('neuro').classList.contains('open')){ neuroRAF=null; return; }
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, t = performance.now()/1000;
+  ctx.clearRect(0,0,w,h);
+  for(let i=0;i<neuroNodes.length;i++){
+    const a = neuroNodes[i];
+    for(let j=i+1;j<neuroNodes.length;j++){
+      const b = neuroNodes[j], d = Math.hypot(a.x-b.x, a.y-b.y);
+      if(d<80){ ctx.strokeStyle='rgba(170,130,220,'+(0.11*(1-d/80))+')'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    }
+  }
+  for(const n of neuroNodes){
+    const tw = 0.5+0.5*Math.sin(t*2+n.ph);
+    ctx.fillStyle = n.c; ctx.globalAlpha = 0.3+0.6*tw;
+    ctx.beginPath(); ctx.arc(n.x, n.y, 1.5+1.9*tw, 0, 6.28); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if(Math.random()<0.3 && neuroNodes.length>2){
+    const a = neuroNodes[(Math.random()*neuroNodes.length)|0];
+    let b=null, bd=999;
+    for(const m of neuroNodes){ if(m===a) continue; const d=Math.hypot(a.x-m.x,a.y-m.y); if(d<92 && d<bd){ bd=d; b=m; } }
+    if(b) neuroPulses.push({a,b,t:0,c:a.c});
+  }
+  neuroPulses = neuroPulses.filter(p=>p.t<1);
+  for(const p of neuroPulses){
+    p.t += 0.06; const x = p.a.x+(p.b.x-p.a.x)*p.t, y = p.a.y+(p.b.y-p.a.y)*p.t;
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(x, y, 2.4, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0;
+  }
+  neuroRAF = requestAnimationFrame(neuroFrame);
+}
+
+// ════════════════════════════════════════════════
 // ACADEMY — Teacher Mode: structured courses, lessons taught step-by-step, quizzes
 // ════════════════════════════════════════════════
 // Lenses turn each course's sub-topics into many concrete lessons (deterministic → stable indices)
@@ -1622,6 +1867,16 @@ const AC_LENS = {
     'When to use {t}','Common pitfalls with {t}','Hands-on with {t}',
     'Best practices for {t}','Explaining {t} in an interview','{t}: going deeper',
   ],
+  psych: [
+    '{t}: what it is','{t}, with a real example','How {t} fools you',
+    'Spotting {t} in everyday life','Using {t} ethically in marketing','How to counter {t}',
+    '{t} in sales and negotiation','{t}: the research behind it','{t}: going deeper',
+  ],
+  law: [
+    '{t}: what it means','Why {t} matters for your app','{t}, with a real example',
+    'Common mistakes with {t}','How to get {t} right','{t} for a solo creator',
+    'Templates and tools for {t}','{t}: your action step this week','{t}: going deeper',
+  ],
 };
 
 const ACADEMY = [
@@ -1638,6 +1893,8 @@ const ACADEMY = [
   {key:'sysdesign', icon:'🏗️', title:'System Design', arch:'tech', modules:['load balancers','reverse proxies','caching strategies','sharding and partitioning','replication','the CAP theorem','throughput, latency and QPS','rate limiting','consistent hashing','message queues in design','database indexing','CDNs and the edge','designing for scale','back-of-the-envelope estimation']},
   {key:'backend', icon:'🔌', title:'Backend and Networking', arch:'tech', modules:['REST APIs','RPC and gRPC','GraphQL','WebSockets vs polling','authentication and JWT','OAuth and SSO','encryption (TLS and at rest)','firewalls and network security','DNS','the HTTP protocol','file transfer (FTP, S3)','error logging and monitoring','idempotency and retries','API versioning']},
   {key:'datatools', icon:'🛠️', title:'Databases and Dev Tools', arch:'tech', modules:['SQL vs NoSQL','database indexing','query performance tuning','embedded databases (SQLite)','ORMs and when to skip them','PyCharm and dev tools','version control with Git','TensorFlow and ML basics','data pipelines','Redis and caching stores','vector databases','backups and migrations','testing and CI','how it all fits together']},
+  {key:'psych', icon:'🧩', title:'Psychology & Mental Models', arch:'psych', modules:['the base rate fallacy','confirmation bias','the anchoring effect','loss aversion','the availability heuristic','the halo effect','social proof','the sunk cost fallacy','the Dunning-Kruger effect','reciprocity','the framing effect','cognitive dissonance','the Zeigarnik effect','the spotlight effect']},
+  {key:'legal', icon:'⚖️', title:'Don’t Get Sued (App Law)', arch:'law', modules:['terms of service','a privacy policy','protecting user data','GDPR and CCPA basics','the FTC Act and honest advertising','avoiding AI-washing','disclosing AI to users','disclaimers and limiting liability','arbitration clauses','intellectual property in your content','trademarks and your brand','an LLC and liability protection','refunds and chargebacks','DMCA and copyright']},
 ];
 // Expand modules × lenses into each course's stable lesson list (~100+ each)
 ACADEMY.forEach(c => {
@@ -1986,7 +2243,7 @@ async function learnMyVoice() {
   if (!cfg.apikey) { toast('Add your API key first'); return; }
   toast('Learning your voice…');
   const s = await JARVIS_CORE.learnStyle({ provider:cfg.provider, apikey:cfg.apikey, url:cfg.url, model:cfg.model, samples });
-  if (s) { cfg.style = s; const el = document.getElementById('c-style'); if (el) el.value = s; localStorage.setItem('jv-cfg', JSON.stringify(cfg)); toast('Learned your voice ✓'); }
+  if (s) { cfg.style = s; const el = document.getElementById('c-style'); if (el) el.value = s; persistCfg(); toast('Learned your voice ✓'); }
   else toast('Could not learn voice — try again');
 }
 
@@ -2122,7 +2379,7 @@ function cmd(text) {
   if (am) {
     cfg.done = cfg.done||[];
     cfg.done.push(am[1].trim());
-    localStorage.setItem('jv-cfg',JSON.stringify(cfg));
+    persistCfg();
     updateStats();
     addMsg('jarvis','assistant',`Product recorded: "${am[1].trim()}"\nTotal launched: ${cfg.done.length}`);
     sfx('recv'); return true;
@@ -2131,7 +2388,7 @@ function cmd(text) {
   const im = text.match(/^set income\s+\$?([\d,]+(?:\.\d+)?)/i);
   if (im) {
     cfg.income = parseFloat(im[1].replace(/,/g,''));
-    localStorage.setItem('jv-cfg',JSON.stringify(cfg));
+    persistCfg();
     updateStats();
     const pct = cfg.goal>0?Math.round((cfg.income/cfg.goal)*100):0;
     addMsg('jarvis','assistant',`Income updated → $${cfg.income.toLocaleString()}\nProsperity: ${pct}%`);
@@ -3008,7 +3265,7 @@ function logSale() {
   // update income stat
   const totalRevenue = sales.reduce((s,x)=>s+x.amt,0);
   cfg.income = Math.round(totalRevenue * 100) / 100;
-  localStorage.setItem('jv-cfg', JSON.stringify(cfg));
+  persistCfg();
   updateStats();
 }
 
@@ -3018,7 +3275,7 @@ function delSale(i) {
   renderSales();
   const totalRevenue = sales.reduce((s,x)=>s+x.amt,0);
   cfg.income = Math.round(totalRevenue * 100) / 100;
-  localStorage.setItem('jv-cfg', JSON.stringify(cfg));
+  persistCfg();
   updateStats();
 }
 
@@ -5414,7 +5671,7 @@ function cleanJarvis() {
 }
 
 
-init();
+bootSecure();
 </script>
 </body>
 </html>
